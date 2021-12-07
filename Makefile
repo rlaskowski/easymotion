@@ -8,6 +8,9 @@ build:
 build-docker:
 	docker build -t rlaskowski/easymotion:latest .
 
+get-dependencies:
+	@go get -d -v ./...
+
 run:
 	go run cmd/easymotion.go
 
