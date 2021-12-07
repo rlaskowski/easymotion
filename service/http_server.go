@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 type HttpServer struct {
@@ -24,10 +25,21 @@ func NewHttpServer() *HttpServer {
 }
 
 func (h *HttpServer) prepareEndpoints() {
+
+}
+
+func (h *HttpServer) configure() {
 	h.echo.HideBanner = true
+	h.echo.HidePort = true
+	h.echo.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
+		Format: `Method: ${method}, Path: ${path}, Remote IP: ${remote_ip}, Status: ${status}`,
+	}))
 }
 
 func (h *HttpServer) Start() error {
+	log.Println("Starting Http Server")
+
+	h.configure()
 	h.prepareEndpoints()
 
 	go func() {
@@ -41,6 +53,8 @@ func (h *HttpServer) Start() error {
 
 func (h *HttpServer) Stop() error {
 	h.cancel()
+
+	log.Println("Stopping Http Server")
 
 	if err := h.echo.Close(); err != nil {
 		return err
