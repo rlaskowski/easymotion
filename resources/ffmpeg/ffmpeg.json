@@ -1,0 +1,14 @@
+{
+    "commands":[
+        {
+            "name":"stream",
+            "command":"ffmpeg",
+            "arguments":[""]
+        },
+        {
+            "name":"",
+            "command":"",
+            "arguments":[""]
+        }
+    ]
+}
