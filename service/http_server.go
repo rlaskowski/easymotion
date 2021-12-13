@@ -1,11 +1,18 @@
 package service
 
 import (
+	"bytes"
 	"context"
+	"fmt"
+	"io"
 	"log"
+	"mime/multipart"
+	"net/http"
+	"net/textproto"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/rlaskowski/easymotion/camera"
 )
 
 type HttpServer struct {
@@ -25,7 +32,7 @@ func NewHttpServer() *HttpServer {
 }
 
 func (h *HttpServer) prepareEndpoints() {
-
+	h.echo.GET("/stream", h.Stream)
 }
 
 func (h *HttpServer) configure() {
@@ -58,6 +65,58 @@ func (h *HttpServer) Stop() error {
 
 	if err := h.echo.Close(); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (h *HttpServer) Stream(c echo.Context) error {
+	cam, err := camera.Open(0)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"error": fmt.Sprintf("could not open camera due to %s", err.Error()),
+		})
+	}
+
+	buff := make([]byte, 1024*1024)
+	boundary := "STREAMCAMERA"
+
+	c.Response().Header().Set("Content-Type", fmt.Sprintf("multipart/x-mixed-replace; boundary=%s", boundary))
+	c.Response().WriteHeader(http.StatusOK)
+
+	for {
+
+		n, err := cam.Read(buff)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, map[string]string{
+				"error": fmt.Sprintf("camera read problem: %s", err.Error()),
+			})
+			cam.Close()
+			break
+		}
+
+		mw := multipart.NewWriter(c.Response())
+		header := make(textproto.MIMEHeader)
+
+		mw.SetBoundary(boundary)
+
+		header.Set("Content-Type", "image/jpeg")
+		header.Set("Content-Length", fmt.Sprintf("%d", n))
+
+		w, err := mw.CreatePart(header)
+		if err != nil {
+			c.Error(err)
+		}
+
+		b := bytes.NewBuffer(buff)
+
+		_, err = io.Copy(w, b)
+		if err != nil {
+			c.Error(err)
+		}
+
+		c.Response().Flush()
+
 	}
 
 	return nil

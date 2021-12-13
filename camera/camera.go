@@ -9,10 +9,10 @@ import (
 type Camera struct {
 	number   int
 	campture *gocv.VideoCapture
-	mat      *gocv.Mat
+	mat      gocv.Mat
 }
 
-func (c *Camera) Open(number int) (*Camera, error) {
+func Open(number int) (*Camera, error) {
 	capture, err := gocv.OpenVideoCapture(number)
 	if err != nil {
 		return nil, err
@@ -21,40 +21,43 @@ func (c *Camera) Open(number int) (*Camera, error) {
 	camera := &Camera{
 		number:   number,
 		campture: capture,
+		mat:      gocv.NewMat(),
 	}
 
 	return camera, nil
 }
 
+func (c *Camera) IsOpened() bool {
+	return c.campture.IsOpened()
+}
+
 func (c *Camera) Close() error {
-	return c.campture.Close()
+	if c.IsOpened() {
+		return c.campture.Close()
+	}
+	return nil
 }
 
 func (c *Camera) WriteToFile(name string) error {
 	return errors.New("not yet implemented")
 }
 
-func (c *Camera) Read(b []byte) error {
-	mat := gocv.NewMat()
-	defer mat.Close()
-
-	for c.campture.IsOpened() {
-		if ok := c.campture.Read(&mat); !ok {
-			return nil
-		}
-
-		if mat.Empty() {
-			continue
-		}
-
-		buff, err := gocv.IMEncode(".jpg", mat)
-		if err != nil {
-			return err
-		}
-
-		b = buff.GetBytes()
-		buff.Close()
+func (c *Camera) Read(b []byte) (n int, err error) {
+	if ok := c.campture.Read(&c.mat); !ok {
+		return 0, nil
 	}
 
-	return nil
+	buff, err := gocv.IMEncode(".jpg", c.mat)
+	if err != nil {
+		return 0, err
+	}
+
+	if c.mat.Empty() {
+		return 0, nil
+	}
+
+	n = copy(b, buff.GetBytes())
+	buff.Close()
+
+	return n, nil
 }
