@@ -1,8 +1,6 @@
 package service
 
 import (
-	"errors"
-
 	"github.com/rlaskowski/easymotion/camera"
 )
 
@@ -17,9 +15,20 @@ func NewCameraService() *CameraService {
 }
 
 func (c *CameraService) Start() error {
-	return errors.New("not yet implemented")
+	cam, err := camera.Open(0)
+	if err != nil {
+		return err
+	}
+
+	c.cameras[0] = cam
+
+	return nil
 }
 
 func (c *CameraService) Stop() error {
-	return errors.New("not yet implemented")
+	if cam, ok := c.cameras[0]; ok {
+		return cam.Close()
+	}
+
+	return nil
 }
