@@ -19,15 +19,17 @@ type HttpServer struct {
 	cancel  context.CancelFunc
 	context context.Context
 	echo    *echo.Echo
+	Runner  Runner
 }
 
-func NewHttpServer() *HttpServer {
+func NewHttpServer(runner Runner) *HttpServer {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	return &HttpServer{
 		cancel:  cancel,
 		context: ctx,
 		echo:    echo.New(),
+		Runner:  runner,
 	}
 }
 
