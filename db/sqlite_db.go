@@ -1,14 +1,39 @@
 package db
 
-import "errors"
+import (
+	"database/sql"
+	"log"
+	"path/filepath"
 
-type SqliteDB struct {
+	_ "github.com/mattn/go-sqlite3"
+)
+
+type Sqlite struct {
+	name, path string
+	database   *sql.DB
 }
 
-func (s *SqliteDB) Start() error {
-	return errors.New("not yet implemented")
+func NewSqlite(path string) *Sqlite {
+	return &Sqlite{
+		name: filepath.Base(path),
+		path: path,
+	}
 }
 
-func (s *SqliteDB) Stop() error {
-	return errors.New("not yet implemented")
+func (s *Sqlite) Start() error {
+	log.Println("Starting sqlite database")
+
+	database, err := sql.Open("sqlite3", s.path)
+	if err != nil {
+		return err
+	}
+
+	s.database = database
+
+	return nil
+}
+
+func (s *Sqlite) Stop() error {
+	log.Println("Stopping sqlite database")
+	return s.database.Close()
 }

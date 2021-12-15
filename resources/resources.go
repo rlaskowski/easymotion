@@ -2,5 +2,5 @@ package resources
 
 import "embed"
 
-//go:embed ffmpeg
+//go:embed sqlite
 var Files embed.FS
