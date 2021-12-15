@@ -31,10 +31,22 @@ func NewService() *Service {
 }
 
 func (s *Service) Start() error {
-	log.Println("Starting all services...")
+	var result []error
+
+	if err := s.sqlite.Start(); err != nil {
+		result = append(result, err)
+		log.Printf("sqlite dabase start problem: %s", err.Error())
+	}
 
 	if err := s.httpServer.Start(); err != nil {
+		result = append(result, err)
 		log.Printf("http server start problem: %s", err.Error())
+	}
+
+	if result != nil {
+		os.Exit(0)
+	} else {
+		log.Println("All services has been started")
 	}
 
 	signal.Notify(s.sigCh, syscall.SIGINT|syscall.SIGTERM|syscall.SIGKILL)
@@ -47,9 +59,14 @@ func (s *Service) Start() error {
 func (s *Service) Stop() error {
 	log.Println("Stopping all services...")
 
+	if err := s.sqlite.Stop(); err != nil {
+		log.Printf("sqlite database stop problem: %s", err.Error())
+	}
+
 	if err := s.httpServer.Stop(); err != nil {
 		log.Printf("http server stop problem: %s", err.Error())
 	}
+
 	return nil
 }
 
