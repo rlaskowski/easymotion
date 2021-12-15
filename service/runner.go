@@ -4,7 +4,7 @@ import "github.com/rlaskowski/easymotion/db"
 
 type Runner interface {
 	Sqlite() *db.Sqlite
-	CameraService() *CameraService
+	CaptureService() *CaptureService
 }
 
 type ServiceRunner interface {

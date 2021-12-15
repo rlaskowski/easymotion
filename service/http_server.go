@@ -12,7 +12,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/rlaskowski/easymotion/camera"
+	"github.com/rlaskowski/easymotion/capture"
 )
 
 type HttpServer struct {
@@ -73,7 +73,7 @@ func (h *HttpServer) Stop() error {
 }
 
 func (h *HttpServer) Stream(c echo.Context) error {
-	cam, err := camera.Open(0)
+	cam, err := capture.Open(0)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{
 			"error": fmt.Sprintf("could not open camera due to %s", err.Error()),

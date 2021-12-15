@@ -1,4 +1,4 @@
-package camera
+package capture
 
 import (
 	"errors"
@@ -6,19 +6,19 @@ import (
 	"gocv.io/x/gocv"
 )
 
-type Camera struct {
+type Capture struct {
 	number   int
 	campture *gocv.VideoCapture
 	mat      gocv.Mat
 }
 
-func Open(number int) (*Camera, error) {
+func Open(number int) (*Capture, error) {
 	capture, err := gocv.OpenVideoCapture(number)
 	if err != nil {
 		return nil, err
 	}
 
-	camera := &Camera{
+	camera := &Capture{
 		number:   number,
 		campture: capture,
 		mat:      gocv.NewMat(),
@@ -27,22 +27,22 @@ func Open(number int) (*Camera, error) {
 	return camera, nil
 }
 
-func (c *Camera) IsOpened() bool {
+func (c *Capture) IsOpened() bool {
 	return c.campture.IsOpened()
 }
 
-func (c *Camera) Close() error {
+func (c *Capture) Close() error {
 	if c.IsOpened() {
 		return c.campture.Close()
 	}
 	return nil
 }
 
-func (c *Camera) WriteToFile(name string) error {
+func (c *Capture) WriteToFile(name string) error {
 	return errors.New("not yet implemented")
 }
 
-func (c *Camera) Read(b []byte) (n int, err error) {
+func (c *Capture) Read(b []byte) (n int, err error) {
 	if ok := c.campture.Read(&c.mat); !ok {
 		return 0, nil
 	}

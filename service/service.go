@@ -12,17 +12,17 @@ import (
 )
 
 type Service struct {
-	httpServer    *HttpServer
-	cameraService *CameraService
-	sqlite        *db.Sqlite
-	sigCh         chan os.Signal
+	httpServer     *HttpServer
+	captureService *CaptureService
+	sqlite         *db.Sqlite
+	sigCh          chan os.Signal
 }
 
 func NewService() *Service {
 	s := &Service{
-		cameraService: NewCameraService(),
-		sqlite:        db.NewSqlite(config.SqlitePath()),
-		sigCh:         make(chan os.Signal, 1),
+		captureService: NewCaptureService(),
+		sqlite:         db.NewSqlite(config.SqlitePath()),
+		sigCh:          make(chan os.Signal, 1),
 	}
 
 	s.httpServer = NewHttpServer(s)
@@ -32,6 +32,11 @@ func NewService() *Service {
 
 func (s *Service) Start() error {
 	var result []error
+
+	if err := s.captureService.Start(); err != nil {
+		result = append(result, err)
+		log.Printf("couldn't start capture service due to: %s", err.Error())
+	}
 
 	if err := s.sqlite.Start(); err != nil {
 		result = append(result, err)
@@ -59,6 +64,10 @@ func (s *Service) Start() error {
 func (s *Service) Stop() error {
 	log.Println("Stopping all services...")
 
+	if err := s.captureService.Stop(); err != nil {
+		log.Printf("couldn't stop campture service due to: %s", err.Error())
+	}
+
 	if err := s.sqlite.Stop(); err != nil {
 		log.Printf("sqlite database stop problem: %s", err.Error())
 	}
@@ -70,8 +79,8 @@ func (s *Service) Stop() error {
 	return nil
 }
 
-func (s *Service) CameraService() *CameraService {
-	return s.cameraService
+func (s *Service) CaptureService() *CaptureService {
+	return s.captureService
 }
 
 func (s *Service) Sqlite() *db.Sqlite {
