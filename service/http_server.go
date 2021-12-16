@@ -76,7 +76,7 @@ func (h *HttpServer) Stop() error {
 }
 
 func (h *HttpServer) Stream(c echo.Context) error {
-	captureID, err := strconv.Atoi(c.FormValue("captureID"))
+	captureID, err := strconv.Atoi(c.Param("captureID"))
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{
 			"capture ID problem": err.Error(),
@@ -97,7 +97,6 @@ func (h *HttpServer) Stream(c echo.Context) error {
 	c.Response().WriteHeader(http.StatusOK)
 
 	for {
-
 		n, err := cam.Read(buff)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, map[string]string{
@@ -117,14 +116,14 @@ func (h *HttpServer) Stream(c echo.Context) error {
 
 		w, err := mw.CreatePart(header)
 		if err != nil {
-			c.Error(err)
+			break
 		}
 
 		b := bytes.NewBuffer(buff)
 
 		_, err = io.Copy(w, b)
 		if err != nil {
-			c.Error(err)
+			break
 		}
 
 		c.Response().Flush()

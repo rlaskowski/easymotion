@@ -38,7 +38,7 @@ func (c *Capture) Close() error {
 	return nil
 }
 
-func (c *Capture) WriteToFile(name string) error {
+func (c *Capture) WriteFile(name string) error {
 	return errors.New("not yet implemented")
 }
 
