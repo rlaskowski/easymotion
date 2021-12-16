@@ -1,14 +1,18 @@
 package service
 
-import "github.com/rlaskowski/easymotion/capture"
+import (
+	"fmt"
+
+	"github.com/rlaskowski/easymotion/capture"
+)
 
 type CaptureService struct {
-	cameras map[int]*capture.Capture
+	captures map[int]*capture.Capture
 }
 
 func NewCaptureService() *CaptureService {
 	return &CaptureService{
-		cameras: make(map[int]*capture.Capture),
+		captures: make(map[int]*capture.Capture),
 	}
 }
 
@@ -18,15 +22,26 @@ func (c *CaptureService) Start() error {
 		return err
 	}
 
-	c.cameras[0] = cam
+	c.captures[0] = cam
 
 	return nil
 }
 
 func (c *CaptureService) Stop() error {
-	if cam, ok := c.cameras[0]; ok {
+	if cam, ok := c.captures[0]; ok {
 		return cam.Close()
 	}
 
 	return nil
+}
+
+//Finding capture by id
+func (c *CaptureService) Capture(id int) (*capture.Capture, error) {
+	capture, ok := c.captures[id]
+
+	if !ok {
+		return nil, fmt.Errorf("capture ID %d not found", id)
+	}
+
+	return capture, nil
 }

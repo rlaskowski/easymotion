@@ -9,10 +9,11 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/textproto"
+	"strconv"
+	"sync"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/rlaskowski/easymotion/capture"
 )
 
 type HttpServer struct {
@@ -20,6 +21,7 @@ type HttpServer struct {
 	context context.Context
 	echo    *echo.Echo
 	Runner  Runner
+	mutex   *sync.Mutex
 }
 
 func NewHttpServer(runner Runner) *HttpServer {
@@ -30,11 +32,12 @@ func NewHttpServer(runner Runner) *HttpServer {
 		context: ctx,
 		echo:    echo.New(),
 		Runner:  runner,
+		mutex:   new(sync.Mutex),
 	}
 }
 
 func (h *HttpServer) prepareEndpoints() {
-	h.echo.GET("/stream", h.Stream)
+	h.echo.GET("/stream/:captureID", h.Stream)
 }
 
 func (h *HttpServer) configure() {
@@ -73,10 +76,17 @@ func (h *HttpServer) Stop() error {
 }
 
 func (h *HttpServer) Stream(c echo.Context) error {
-	cam, err := capture.Open(0)
+	captureID, err := strconv.Atoi(c.FormValue("captureID"))
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{
-			"error": fmt.Sprintf("could not open camera due to %s", err.Error()),
+			"capture ID problem": err.Error(),
+		})
+	}
+
+	cam, err := h.Runner.CaptureService().Capture(captureID)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"capture error": err.Error(),
 		})
 	}
 
