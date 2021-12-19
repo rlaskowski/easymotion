@@ -93,19 +93,6 @@ func (c *Capture) Read(b []byte) (n int, err error) {
 		return 0, err
 	}
 
-	/* if ok := c.campture.Read(&c.mat); !ok {
-		return 0, nil
-	}
-
-	buff, err := gocv.IMEncode(".jpg", c.mat)
-	if err != nil {
-		return 0, err
-	}
-
-	if c.mat.Empty() {
-		return 0, nil
-	} */
-
 	buff, err := gocv.IMEncode(".jpg", mat)
 	if err != nil {
 		return 0, err

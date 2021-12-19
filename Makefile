@@ -16,7 +16,7 @@ get-dependencies:
 	@go get -d -v ./...
 
 run:
-	go run cmd/easymotion.go
+	go run cmd/easymotion.go run
 
 clean:
 	@rm -Rf dist 
