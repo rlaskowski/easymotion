@@ -38,6 +38,7 @@ func NewHttpServer(runner Runner) *HttpServer {
 
 func (h *HttpServer) prepareEndpoints() {
 	h.echo.GET("/stream/:captureID", h.Stream)
+	h.echo.POST("/capture/record/:captureID", h.StartRecord)
 }
 
 func (h *HttpServer) configure() {
@@ -75,6 +76,31 @@ func (h *HttpServer) Stop() error {
 	return nil
 }
 
+func (h *HttpServer) StartRecord(c echo.Context) error {
+	captureID, err := strconv.Atoi(c.Param("captureID"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"capture ID problem": err.Error(),
+		})
+	}
+
+	capture, err := h.Runner.CaptureService().Capture(captureID)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"capture error": err.Error(),
+		})
+	}
+
+	err = h.Runner.CaptureService().WriteFile(capture)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"video record problem": err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, "Started recordin")
+}
+
 func (h *HttpServer) Stream(c echo.Context) error {
 	captureID, err := strconv.Atoi(c.Param("captureID"))
 	if err != nil {
@@ -83,28 +109,33 @@ func (h *HttpServer) Stream(c echo.Context) error {
 		})
 	}
 
-	cam, err := h.Runner.CaptureService().Capture(captureID)
+	capture, err := h.Runner.CaptureService().Capture(captureID)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{
 			"capture error": err.Error(),
 		})
 	}
 
-	buff := make([]byte, 1024*1024)
+	//buff := make([]byte, 1024*1024)
 	boundary := "STREAMCAMERA"
 
 	c.Response().Header().Set("Content-Type", fmt.Sprintf("multipart/x-mixed-replace; boundary=%s", boundary))
 	c.Response().WriteHeader(http.StatusOK)
 
 	for {
-		n, err := cam.Read(buff)
+		/* 	n, err := cam.Read(buff)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, map[string]string{
 				"error": fmt.Sprintf("camera read problem: %s", err.Error()),
 			})
 			cam.Close()
 			break
-		}
+		} */
+
+		bch := h.Runner.CaptureService().Stream(capture)
+		buff := <-bch
+
+		b := bytes.NewBuffer(buff)
 
 		mw := multipart.NewWriter(c.Response())
 		header := make(textproto.MIMEHeader)
@@ -112,14 +143,12 @@ func (h *HttpServer) Stream(c echo.Context) error {
 		mw.SetBoundary(boundary)
 
 		header.Set("Content-Type", "image/jpeg")
-		header.Set("Content-Length", fmt.Sprintf("%d", n))
+		header.Set("Content-Length", fmt.Sprintf("%d", b.Len()))
 
 		w, err := mw.CreatePart(header)
 		if err != nil {
 			break
 		}
-
-		b := bytes.NewBuffer(buff)
 
 		_, err = io.Copy(w, b)
 		if err != nil {

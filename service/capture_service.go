@@ -45,3 +45,41 @@ func (c *CaptureService) Capture(id int) (*capture.Capture, error) {
 
 	return capture, nil
 }
+
+func (c *CaptureService) Stream(capture *capture.Capture) <-chan []byte {
+	imgch := make(chan []byte, 100)
+
+	go func() {
+		buff := make([]byte, 1024*1024)
+
+		_, err := capture.Read(buff)
+		if err != nil {
+			imgch <- nil
+		}
+
+		imgch <- buff
+	}()
+
+	return imgch
+}
+
+func (c *CaptureService) WriteFile(cap *capture.Capture) error {
+	name := "example"
+	videoPath := fmt.Sprintf("%s.avi", name)
+
+	vf, err := cap.VideoFile(videoPath, "h264")
+	if err != nil {
+		return err
+	}
+
+	go func() {
+		for {
+			err := vf.Write()
+			if err != nil {
+				break
+			}
+		}
+	}()
+
+	return nil
+}

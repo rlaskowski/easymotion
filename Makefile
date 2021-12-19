@@ -5,6 +5,10 @@ build:
 	@-${MAKE} clean
 	go build -o dist/ cmd/easymotion.go
 
+build-raspi:
+	@-$(MAKE) clean
+	GOOS=linux GOARCH=arm go build -o dist/raspi cmd/easymotion.go
+
 build-docker:
 	docker build -t rlaskowski/easymotion:latest .
 

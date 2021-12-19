@@ -6,9 +6,15 @@ import (
 )
 
 func SqlitePath() string {
+	path := ProjectPath()
+
+	return filepath.Join(path, "easymotion.db")
+}
+
+func ProjectPath() string {
 	wd, err := os.Getwd()
 	if err != nil {
 		return ""
 	}
-	return filepath.Join(wd, "easymotion.db")
+	return wd
 }
