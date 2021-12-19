@@ -12,6 +12,7 @@ type Capture struct {
 	campture *gocv.VideoCapture
 	mat      gocv.Mat
 	matPool  sync.Pool
+	mutex    *sync.Mutex
 }
 
 func Open(number int) (*Capture, error) {
@@ -24,6 +25,7 @@ func Open(number int) (*Capture, error) {
 		number:   number,
 		campture: capture,
 		mat:      gocv.NewMat(),
+		mutex:    new(sync.Mutex),
 	}
 
 	camera.matPool.New = func() interface{} {
@@ -69,6 +71,9 @@ func (c *Capture) VideoFile(name, codec string) (*VideoFile, error) {
 }
 
 func (c *Capture) readMat() (gocv.Mat, error) {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
 	mat := c.mat
 
 	if ok := c.campture.Read(&mat); !ok {
