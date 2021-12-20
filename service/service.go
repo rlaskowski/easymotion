@@ -2,8 +2,6 @@ package service
 
 import (
 	"os"
-	"os/signal"
-	"syscall"
 
 	"log"
 
@@ -31,34 +29,25 @@ func NewService() *Service {
 }
 
 func (s *Service) Start() error {
-	var result []error
+	var result error
 
-	if err := s.captureService.Start(); err != nil {
-		result = append(result, err)
-		log.Printf("couldn't start capture service due to: %s", err.Error())
+	if result := s.captureService.Start(); result != nil {
+		log.Printf("couldn't start capture service due to: %s", result.Error())
 	}
 
-	if err := s.sqlite.Start(); err != nil {
-		result = append(result, err)
-		log.Printf("sqlite dabase start problem: %s", err.Error())
+	if result := s.sqlite.Start(); result != nil {
+		log.Printf("sqlite dabase start problem: %s", result.Error())
 	}
 
-	if err := s.httpServer.Start(); err != nil {
-		result = append(result, err)
-		log.Printf("http server start problem: %s", err.Error())
+	if result := s.httpServer.Start(); result != nil {
+		log.Printf("http server start problem: %s", result.Error())
 	}
 
-	if result != nil {
-		os.Exit(0)
-	} else {
+	if result == nil {
 		log.Println("All services has been started")
 	}
 
-	signal.Notify(s.sigCh, syscall.SIGINT|syscall.SIGTERM|syscall.SIGKILL)
-
-	<-s.sigCh
-
-	return nil
+	return result
 }
 
 func (s *Service) Stop() error {

@@ -14,9 +14,9 @@ func main() {
 		fmt.Println("Please select option to run for example: install | uninstall | restart | run")
 	}
 
-	service, err := service.CreateSystemContext()
+	service, err := service.CreateSystemService()
 	if err != nil {
-		fmt.Errorf("Unexpected error: %s", err.Error())
+		log.Fatalf("Unexpected error: %s", err.Error())
 	}
 
 	switch os.Args[1] {
@@ -37,6 +37,4 @@ func main() {
 			log.Println(err)
 		}
 	}
-	/* service := service.NewService()
-	service.Start() */
 }
