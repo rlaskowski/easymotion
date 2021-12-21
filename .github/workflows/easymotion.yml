@@ -24,12 +24,12 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Checkout Repo
-      - uses: actions/checkout@v2
+        uses: actions/checkout@v2
 
       - name: Build
-      - run: make build-raspi
+        run: make build-raspi
 
       - name: Install as a System Service
-      - run: dist/easymotion install
+        run: dist/easymotion install
 
       
