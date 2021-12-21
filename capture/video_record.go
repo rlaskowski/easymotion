@@ -18,13 +18,17 @@ func (v *VideoRecord) Write() error {
 		return errors.New("empty mat")
 	}
 
-	if v.videoWriter.IsOpened() {
+	if v.IsOpened() {
 		v.videoWriter.Write(mat)
 	} else {
 		return io.EOF
 	}
 
 	return nil
+}
+
+func (v *VideoRecord) IsOpened() bool {
+	return v.videoWriter.IsOpened()
 }
 
 func (v *VideoRecord) Close() error {

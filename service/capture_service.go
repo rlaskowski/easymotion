@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"time"
 
 	"github.com/rlaskowski/easymotion/capture"
 )
@@ -90,8 +91,8 @@ func (c *CaptureService) StartRecording(id int) error {
 		return fmt.Errorf("video record is already exist, capture %v", id)
 	}
 
-	name := "cap"
-	videoPath := fmt.Sprintf("%s%d.avi", name, id)
+	name := time.Now().Format("1504")
+	videoPath := fmt.Sprintf("c%d_%s.avi", id, name)
 
 	vf, err := cap.VideoRecord(videoPath, "h264")
 	if err != nil {
@@ -117,7 +118,7 @@ func (c *CaptureService) StartRecording(id int) error {
 func (c *CaptureService) StopRecording(id int) error {
 	vr, err := c.VideoRecord(id)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	if err := vr.Close(); err != nil {

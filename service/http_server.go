@@ -38,8 +38,8 @@ func NewHttpServer(runner Runner) *HttpServer {
 
 func (h *HttpServer) prepareEndpoints() {
 	h.echo.GET("/stream/:captureID", h.Stream)
-	h.echo.POST("/capture/:captureID/record/start", h.StartRecording)
-	h.echo.POST("/capture/:captureID/record/stop", h.StopRecording)
+	h.echo.POST("/capture/:captureID/recording/start", h.StartRecording)
+	h.echo.POST("/capture/:captureID/recording/stop", h.StopRecording)
 }
 
 func (h *HttpServer) configure() {
