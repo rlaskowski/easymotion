@@ -1,6 +1,9 @@
 package capture
 
 import (
+	"errors"
+	"io"
+
 	"gocv.io/x/gocv"
 )
 
@@ -10,13 +13,19 @@ type VideoFile struct {
 }
 
 func (v *VideoFile) Write() error {
-	mat, err := v.capture.readMat()
+	mat := <-v.capture.readMat()
+	if mat.Empty() {
+		return errors.New("empty mat")
+	}
+	/* err := v.capture.readMat()
 	if err != nil {
 		return err
-	}
+	} */
 
 	if v.videoWriter.IsOpened() {
 		v.videoWriter.Write(mat)
+	} else {
+		return io.EOF
 	}
 
 	return nil

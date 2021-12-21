@@ -2,17 +2,17 @@ package capture
 
 import (
 	"errors"
+	"log"
 	"sync"
 
 	"gocv.io/x/gocv"
 )
 
 type Capture struct {
-	number   int
-	campture *gocv.VideoCapture
-	mat      gocv.Mat
-	matPool  sync.Pool
-	mutex    *sync.Mutex
+	number    int
+	recording bool
+	campture  *gocv.VideoCapture
+	matPool   sync.Pool
 }
 
 func Open(number int) (*Capture, error) {
@@ -24,8 +24,6 @@ func Open(number int) (*Capture, error) {
 	camera := &Capture{
 		number:   number,
 		campture: capture,
-		mat:      gocv.NewMat(),
-		mutex:    new(sync.Mutex),
 	}
 
 	camera.matPool.New = func() interface{} {
@@ -51,9 +49,10 @@ func (c *Capture) Num() int {
 }
 
 func (c *Capture) VideoFile(name, codec string) (*VideoFile, error) {
-	mat, err := c.readMat()
-	if err != nil {
-		return nil, err
+	mat := <-c.readMat()
+
+	if mat.Empty() {
+		return nil, errors.New("empty mat")
 	}
 
 	writer, err := gocv.VideoWriterFile(name, codec, 30, mat.Cols(), mat.Rows(), true)
@@ -67,30 +66,31 @@ func (c *Capture) VideoFile(name, codec string) (*VideoFile, error) {
 	}
 
 	return v, nil
-
 }
 
-func (c *Capture) readMat() (gocv.Mat, error) {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
+func (c *Capture) readMat() <-chan gocv.Mat {
+	match := make(chan gocv.Mat)
 
-	mat := c.mat
+	go func() {
+		mat := c.matPool.Get().(gocv.Mat)
+		defer c.matPool.Put(mat)
 
-	if ok := c.campture.Read(&mat); !ok {
-		return gocv.Mat{}, errors.New("nothing to read")
-	}
+		if ok := c.campture.Read(&mat); !ok {
+			log.Println("nothing to read from capture")
+		}
 
-	if c.mat.Empty() {
-		return gocv.Mat{}, errors.New("empty mat")
-	}
+		match <- mat
+		close(match)
+	}()
 
-	return mat, nil
+	return match
 }
 
 func (c *Capture) Read(b []byte) (n int, err error) {
-	mat, err := c.readMat()
-	if err != nil {
-		return 0, err
+	mat := <-c.readMat()
+
+	if mat.Empty() {
+		return 0, nil
 	}
 
 	buff, err := gocv.IMEncode(".jpg", mat)
@@ -102,9 +102,4 @@ func (c *Capture) Read(b []byte) (n int, err error) {
 	buff.Close()
 
 	return n, nil
-}
-
-func (c *Capture) acquireMat() *gocv.Mat {
-	m := c.matPool.Get().(*gocv.Mat)
-	return m
 }

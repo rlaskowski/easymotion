@@ -2,6 +2,8 @@ package service
 
 import (
 	"fmt"
+	"io"
+	"log"
 
 	"github.com/rlaskowski/easymotion/capture"
 )
@@ -23,6 +25,10 @@ func (c *CaptureService) Start() error {
 	}
 
 	c.captures[0] = cam
+
+	if err := c.WriteFile(); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -63,7 +69,12 @@ func (c *CaptureService) Stream(capture *capture.Capture) <-chan []byte {
 	return imgch
 }
 
-func (c *CaptureService) WriteFile(cap *capture.Capture) error {
+func (c *CaptureService) WriteFile() error {
+	cap, err := c.Capture(0)
+	if err != nil {
+		return err
+	}
+
 	name := "example"
 	videoPath := fmt.Sprintf("%s.avi", name)
 
@@ -75,8 +86,12 @@ func (c *CaptureService) WriteFile(cap *capture.Capture) error {
 	go func() {
 		for {
 			err := vf.Write()
+
 			if err != nil {
-				break
+				if err == io.EOF {
+					break
+				}
+				log.Println(err)
 			}
 		}
 	}()

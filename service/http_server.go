@@ -38,7 +38,7 @@ func NewHttpServer(runner Runner) *HttpServer {
 
 func (h *HttpServer) prepareEndpoints() {
 	h.echo.GET("/stream/:captureID", h.Stream)
-	h.echo.POST("/capture/record/:captureID", h.StartRecord)
+	h.echo.POST("/capture/record", h.StartRecord)
 }
 
 func (h *HttpServer) configure() {
@@ -77,21 +77,7 @@ func (h *HttpServer) Stop() error {
 }
 
 func (h *HttpServer) StartRecord(c echo.Context) error {
-	captureID, err := strconv.Atoi(c.Param("captureID"))
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{
-			"capture ID problem": err.Error(),
-		})
-	}
-
-	capture, err := h.Runner.CaptureService().Capture(captureID)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{
-			"capture error": err.Error(),
-		})
-	}
-
-	err = h.Runner.CaptureService().WriteFile(capture)
+	err := h.Runner.CaptureService().WriteFile()
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{
 			"video record problem": err.Error(),
