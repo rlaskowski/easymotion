@@ -20,7 +20,7 @@ jobs:
       matrix:
         os: [self-hosted]
         go: [1.17]
-    name: ${{ matrix.os }} @Go ${{ matrix.go }}
+    name: ${{ matrix.os }} @ Go ${{ matrix.go }}
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout Repo
@@ -34,7 +34,7 @@ jobs:
       - name: Build
         run: make build-raspi
 
-      - name: Install as a System Service
-        run: dist/easymotion install
+      - name: Run
+        run: dist/easymotion run
 
       
