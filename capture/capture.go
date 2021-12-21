@@ -72,7 +72,7 @@ func (c *Capture) readMat() <-chan gocv.Mat {
 	match := make(chan gocv.Mat)
 
 	go func() {
-		mat := c.matPool.Get().(gocv.Mat)
+		mat := gocv.NewMat() //c.matPool.Get().(gocv.Mat)
 
 		if ok := c.campture.Read(&mat); !ok {
 			log.Println("nothing to read from capture")
@@ -81,7 +81,7 @@ func (c *Capture) readMat() <-chan gocv.Mat {
 		match <- mat
 		close(match)
 
-		c.matPool.Put(&mat)
+		//c.matPool.Put(&mat)
 	}()
 
 	return match
