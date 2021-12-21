@@ -53,7 +53,7 @@ func (c *CaptureService) Capture(id int) (*capture.Capture, error) {
 }
 
 func (c *CaptureService) Stream(capture *capture.Capture) <-chan []byte {
-	imgch := make(chan []byte, 100)
+	imgch := make(chan []byte, 10)
 
 	go func() {
 		buff := make([]byte, 1024*1024)

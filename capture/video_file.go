@@ -17,10 +17,6 @@ func (v *VideoFile) Write() error {
 	if mat.Empty() {
 		return errors.New("empty mat")
 	}
-	/* err := v.capture.readMat()
-	if err != nil {
-		return err
-	} */
 
 	if v.videoWriter.IsOpened() {
 		v.videoWriter.Write(mat)
