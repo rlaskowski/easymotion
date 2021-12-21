@@ -26,10 +26,6 @@ func (c *CaptureService) Start() error {
 
 	c.captures[0] = cam
 
-	if err := c.WriteFile(); err != nil {
-		return err
-	}
-
 	return nil
 }
 
