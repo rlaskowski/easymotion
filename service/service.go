@@ -1,8 +1,6 @@
 package service
 
 import (
-	"os"
-
 	"log"
 
 	"github.com/rlaskowski/easymotion/config"
@@ -13,14 +11,12 @@ type Service struct {
 	httpServer     *HttpServer
 	captureService *CaptureService
 	sqlite         *db.Sqlite
-	sigCh          chan os.Signal
 }
 
 func NewService() *Service {
 	s := &Service{
 		captureService: NewCaptureService(),
 		sqlite:         db.NewSqlite(config.SqlitePath()),
-		sigCh:          make(chan os.Signal, 1),
 	}
 
 	s.httpServer = NewHttpServer(s)

@@ -73,7 +73,7 @@ func (c *Capture) readMat() <-chan gocv.Mat {
 
 	go func() {
 		mat := c.matPool.Get().(gocv.Mat)
-		defer c.matPool.Put(mat)
+		defer c.matPool.Put(&mat)
 
 		if ok := c.campture.Read(&mat); !ok {
 			log.Println("nothing to read from capture")
