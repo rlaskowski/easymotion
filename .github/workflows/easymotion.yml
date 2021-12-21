@@ -34,7 +34,7 @@ jobs:
       - name: Build
         run: make build-raspi
 
-      - name: Run
-        run: dist/easymotion run
+      - name: Install as Service
+        run: sudo dist/easymotion install
 
       
