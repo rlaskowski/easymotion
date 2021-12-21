@@ -43,7 +43,7 @@ func (c *Capture) Num() int {
 	return c.number
 }
 
-func (c *Capture) VideoFile(name, codec string) (*VideoFile, error) {
+func (c *Capture) VideoRecord(name, codec string) (*VideoRecord, error) {
 	mat := <-c.readMat()
 
 	if mat.Empty() {
@@ -55,7 +55,7 @@ func (c *Capture) VideoFile(name, codec string) (*VideoFile, error) {
 		return nil, err
 	}
 
-	v := &VideoFile{
+	v := &VideoRecord{
 		videoWriter: writer,
 		capture:     c,
 	}
@@ -64,7 +64,7 @@ func (c *Capture) VideoFile(name, codec string) (*VideoFile, error) {
 }
 
 func (c *Capture) readMat() <-chan gocv.Mat {
-	match := make(chan gocv.Mat)
+	match := make(chan gocv.Mat, 10)
 
 	go func() {
 

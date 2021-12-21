@@ -7,12 +7,12 @@ import (
 	"gocv.io/x/gocv"
 )
 
-type VideoFile struct {
+type VideoRecord struct {
 	videoWriter *gocv.VideoWriter
 	capture     *Capture
 }
 
-func (v *VideoFile) Write() error {
+func (v *VideoRecord) Write() error {
 	mat := <-v.capture.readMat()
 	if mat.Empty() {
 		return errors.New("empty mat")
@@ -27,6 +27,6 @@ func (v *VideoFile) Write() error {
 	return nil
 }
 
-func (v *VideoFile) Close() error {
+func (v *VideoRecord) Close() error {
 	return v.videoWriter.Close()
 }

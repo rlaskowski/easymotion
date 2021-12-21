@@ -9,29 +9,35 @@ import (
 )
 
 type CaptureService struct {
-	captures map[int]*capture.Capture
+	captures     map[int]*capture.Capture
+	videosRecord map[int]*capture.VideoRecord
 }
 
 func NewCaptureService() *CaptureService {
 	return &CaptureService{
-		captures: make(map[int]*capture.Capture),
+		captures:     make(map[int]*capture.Capture),
+		videosRecord: make(map[int]*capture.VideoRecord),
 	}
 }
 
 func (c *CaptureService) Start() error {
-	cam, err := capture.Open(0)
+	cap, err := capture.Open(0)
 	if err != nil {
 		return err
 	}
 
-	c.captures[0] = cam
+	c.captures[0] = cap
 
 	return nil
 }
 
 func (c *CaptureService) Stop() error {
-	if cam, ok := c.captures[0]; ok {
-		return cam.Close()
+	if cap, ok := c.captures[0]; ok {
+		return cap.Close()
+	}
+
+	if vr, ok := c.videosRecord[0]; ok {
+		return vr.Close()
 	}
 
 	return nil
@@ -39,17 +45,26 @@ func (c *CaptureService) Stop() error {
 
 //Finding capture by id
 func (c *CaptureService) Capture(id int) (*capture.Capture, error) {
-	capture, ok := c.captures[id]
-
+	cap, ok := c.captures[id]
 	if !ok {
-		return nil, fmt.Errorf("capture ID %d not found", id)
+		return nil, fmt.Errorf("could not find capture %v", id)
 	}
 
-	return capture, nil
+	return cap, nil
+}
+
+//Finding Video Record by capture id
+func (c *CaptureService) VideoRecord(id int) (*capture.VideoRecord, error) {
+	vr, ok := c.videosRecord[id]
+	if !ok {
+		return nil, fmt.Errorf("could not find video record, capture %v", id)
+	}
+
+	return vr, nil
 }
 
 func (c *CaptureService) Stream(capture *capture.Capture) <-chan []byte {
-	imgch := make(chan []byte)
+	imgch := make(chan []byte, 10)
 
 	go func() {
 		buff := make([]byte, 1024*1024)
@@ -65,16 +80,20 @@ func (c *CaptureService) Stream(capture *capture.Capture) <-chan []byte {
 	return imgch
 }
 
-func (c *CaptureService) WriteFile() error {
-	cap, err := c.Capture(0)
+func (c *CaptureService) StartRecording(id int) error {
+	cap, err := c.Capture(id)
 	if err != nil {
 		return err
 	}
 
-	name := "example"
-	videoPath := fmt.Sprintf("%s.avi", name)
+	if _, err := c.VideoRecord(id); err == nil {
+		return fmt.Errorf("video record is already exist, capture %v", id)
+	}
 
-	vf, err := cap.VideoFile(videoPath, "h264")
+	name := "cap"
+	videoPath := fmt.Sprintf("%s%d.avi", name, id)
+
+	vf, err := cap.VideoRecord(videoPath, "h264")
 	if err != nil {
 		return err
 	}
@@ -91,6 +110,21 @@ func (c *CaptureService) WriteFile() error {
 			}
 		}
 	}()
+
+	return nil
+}
+
+func (c *CaptureService) StopRecording(id int) error {
+	vr, err := c.VideoRecord(id)
+	if err != nil {
+		return nil
+	}
+
+	if err := vr.Close(); err != nil {
+		return err
+	}
+
+	delete(c.videosRecord, id)
 
 	return nil
 }

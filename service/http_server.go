@@ -38,7 +38,8 @@ func NewHttpServer(runner Runner) *HttpServer {
 
 func (h *HttpServer) prepareEndpoints() {
 	h.echo.GET("/stream/:captureID", h.Stream)
-	h.echo.POST("/capture/record", h.StartRecord)
+	h.echo.POST("/capture/:captureID/record/start", h.StartRecording)
+	h.echo.POST("/capture/:captureID/record/stop", h.StopRecording)
 }
 
 func (h *HttpServer) configure() {
@@ -76,15 +77,40 @@ func (h *HttpServer) Stop() error {
 	return nil
 }
 
-func (h *HttpServer) StartRecord(c echo.Context) error {
-	err := h.Runner.CaptureService().WriteFile()
+func (h *HttpServer) StartRecording(c echo.Context) error {
+	captureID, err := strconv.Atoi(c.Param("captureID"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"capture ID problem": err.Error(),
+		})
+	}
+
+	err = h.Runner.CaptureService().StartRecording(captureID)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{
 			"video record problem": err.Error(),
 		})
 	}
 
-	return c.JSON(http.StatusOK, "Started recordin")
+	return c.JSON(http.StatusOK, "Recording was started")
+}
+
+func (h *HttpServer) StopRecording(c echo.Context) error {
+	captureID, err := strconv.Atoi(c.Param("captureID"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"capture ID problem": err.Error(),
+		})
+	}
+
+	err = h.Runner.CaptureService().StopRecording(captureID)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"video record problem": err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, "Recording was stopped")
 }
 
 func (h *HttpServer) Stream(c echo.Context) error {
