@@ -3,16 +3,14 @@ package capture
 import (
 	"errors"
 	"log"
-	"sync"
 
 	"gocv.io/x/gocv"
 )
 
 type Capture struct {
-	number    int
-	recording bool
-	campture  *gocv.VideoCapture
-	matPool   sync.Pool
+	number   int
+	campture *gocv.VideoCapture
+	mat      gocv.Mat
 }
 
 func Open(number int) (*Capture, error) {
@@ -24,10 +22,7 @@ func Open(number int) (*Capture, error) {
 	camera := &Capture{
 		number:   number,
 		campture: capture,
-	}
-
-	camera.matPool.New = func() interface{} {
-		return gocv.NewMat()
+		mat:      gocv.NewMat(),
 	}
 
 	return camera, nil
@@ -72,16 +67,14 @@ func (c *Capture) readMat() <-chan gocv.Mat {
 	match := make(chan gocv.Mat)
 
 	go func() {
-		mat := gocv.NewMat() //c.matPool.Get().(gocv.Mat)
 
-		if ok := c.campture.Read(&mat); !ok {
+		if ok := c.campture.Read(&c.mat); !ok {
 			log.Println("nothing to read from capture")
 		}
 
-		match <- mat
+		match <- c.mat
 		close(match)
 
-		//c.matPool.Put(&mat)
 	}()
 
 	return match
