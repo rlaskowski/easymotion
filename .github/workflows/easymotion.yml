@@ -18,10 +18,8 @@ jobs:
   build-raspi:
     strategy:
       matrix:
-        os: [self-hosted, linux, ARM]
-        go: [1.16, 1.17]
-    #runs-on: [ self-hosted, linux, ARM ] 
-
+        os: [self-hosted]
+        go: [1.17]
     name: ${{ matrix.os }} @Go ${{ matrix.go }}
     runs-on: ${{ matrix.os }}
     steps:
