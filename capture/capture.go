@@ -71,8 +71,10 @@ func (c *Capture) readMat() <-chan gocv.Mat {
 		if ok := c.campture.Read(&c.mat); !ok {
 			log.Println("nothing to read from capture")
 		}
-		close(match)
+
 		match <- c.mat
+
+		close(match)
 
 	}()
 
