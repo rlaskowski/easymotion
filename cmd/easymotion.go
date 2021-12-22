@@ -25,11 +25,31 @@ func main() {
 			log.Println(err)
 		}
 	case "install":
+		if err := service.StopService(); err != nil {
+			log.Println(err)
+		}
+
+		if err := service.UninstallService(); err != nil {
+			log.Println(err)
+		}
+
 		if err := service.InstallService(); err != nil {
 			log.Println(err)
 		}
 	case "uninstall":
+		if err := service.StopService(); err != nil {
+			log.Println(err)
+		}
+
 		if err := service.UninstallService(); err != nil {
+			log.Println(err)
+		}
+	case "start":
+		if err := service.StartService(); err != nil {
+			log.Println(err)
+		}
+	case "stop":
+		if err := service.StopService(); err != nil {
 			log.Println(err)
 		}
 	case "restart":

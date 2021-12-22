@@ -34,13 +34,8 @@ jobs:
       - name: Build
         run: make build-raspi
 
-      - name: Uninstall Service
-        run: sudo dist/easymotion uninstall
-
       - name: Install Service
         run: sudo dist/easymotion install
 
-      - name: Start Service
-        run: sudo systemctl start EasyMotion
 
       

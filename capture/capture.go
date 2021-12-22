@@ -64,16 +64,15 @@ func (c *Capture) VideoRecord(name, codec string) (*VideoRecord, error) {
 }
 
 func (c *Capture) readMat() <-chan gocv.Mat {
-	match := make(chan gocv.Mat, 10)
+	match := make(chan gocv.Mat)
 
 	go func() {
 
 		if ok := c.campture.Read(&c.mat); !ok {
 			log.Println("nothing to read from capture")
 		}
-
-		match <- c.mat
 		close(match)
+		match <- c.mat
 
 	}()
 

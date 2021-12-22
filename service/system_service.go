@@ -49,3 +49,11 @@ func (s *SystemService) RunService() error {
 func (s *SystemService) StatusService() (service.Status, error) {
 	return s.service.Status()
 }
+
+func (s *SystemService) StartService() error {
+	return s.service.Start()
+}
+
+func (s *SystemService) StopService() error {
+	return s.service.Stop()
+}
