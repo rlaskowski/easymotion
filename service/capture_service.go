@@ -99,6 +99,8 @@ func (c *CaptureService) StartRecording(id int) error {
 		return err
 	}
 
+	c.videosRecord[id] = vf
+
 	go func() {
 		for {
 			err := vf.Write()
