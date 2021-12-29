@@ -36,6 +36,10 @@ func main() {
 		if err := service.InstallService(); err != nil {
 			log.Println(err)
 		}
+
+		if err := service.StartService(); err != nil {
+			log.Println(err)
+		}
 	case "uninstall":
 		if err := service.StopService(); err != nil {
 			log.Println(err)
