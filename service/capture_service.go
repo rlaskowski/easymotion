@@ -97,7 +97,7 @@ func (c *CaptureService) StartRecording(id int) error {
 		return fmt.Errorf("video record is already exist, capture %v", id)
 	}
 
-	name := time.Now().Format("150405")
+	name := time.Now().Format("2006-01-02_15-04-05")
 	videoPath := fmt.Sprintf("cam%d_%s.avi", id, name)
 
 	vf, err := cap.VideoRecord(videoPath, "h264")
