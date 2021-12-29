@@ -21,6 +21,9 @@ func NewCaptureService() *CaptureService {
 	}
 }
 
+//Starting all process
+//
+//for example create active capture list
 func (c *CaptureService) Start() error {
 	cap, err := capture.Open(0)
 	if err != nil {
@@ -32,13 +35,14 @@ func (c *CaptureService) Start() error {
 	return nil
 }
 
+//Stopping all active processes
 func (c *CaptureService) Stop() error {
-	if cap, ok := c.captures[0]; ok {
-		return cap.Close()
+	if err := c.StopRecording(0); err != nil {
+		return err
 	}
 
-	if vr, ok := c.videosRecord[0]; ok {
-		return vr.Close()
+	if cap, ok := c.captures[0]; ok {
+		return cap.Close()
 	}
 
 	return nil
@@ -64,6 +68,7 @@ func (c *CaptureService) VideoRecord(id int) (*capture.VideoRecord, error) {
 	return vr, nil
 }
 
+//Stream video file
 func (c *CaptureService) Stream(capture *capture.Capture) <-chan []byte {
 	imgch := make(chan []byte, 10)
 
@@ -81,6 +86,7 @@ func (c *CaptureService) Stream(capture *capture.Capture) <-chan []byte {
 	return imgch
 }
 
+//Starting recording by capture id
 func (c *CaptureService) StartRecording(id int) error {
 	cap, err := c.Capture(id)
 	if err != nil {
@@ -91,8 +97,8 @@ func (c *CaptureService) StartRecording(id int) error {
 		return fmt.Errorf("video record is already exist, capture %v", id)
 	}
 
-	name := time.Now().Format("1504")
-	videoPath := fmt.Sprintf("c%d_%s.avi", id, name)
+	name := time.Now().Format("150405")
+	videoPath := fmt.Sprintf("cam%d_%s.avi", id, name)
 
 	vf, err := cap.VideoRecord(videoPath, "h264")
 	if err != nil {
@@ -117,6 +123,7 @@ func (c *CaptureService) StartRecording(id int) error {
 	return nil
 }
 
+//Stopping recording by capture id
 func (c *CaptureService) StopRecording(id int) error {
 	vr, err := c.VideoRecord(id)
 	if err != nil {
