@@ -31,7 +31,25 @@ func (v *VideoRecord) Write() error {
 
 //Writes until data not across number of bytes declared in n
 func (v *VideoRecord) WriteTo(n int64) error {
-	return errors.New("not yet implemented")
+	file, err := os.Create(v.name)
+	if err != nil {
+		return err
+	}
+
+	defer file.Close()
+
+	mat := <-v.capture.readMat()
+	if mat.Empty() {
+		return errors.New("empty mat")
+	}
+
+	if v.IsOpened() {
+		v.videoWriter.Write(mat)
+	} else {
+		return io.EOF
+	}
+
+	return nil
 }
 
 func (v *VideoRecord) Size() int64 {
