@@ -109,6 +109,17 @@ func (c *CaptureService) StartRecording(id int) error {
 
 	go func() {
 		for {
+			if vf.Size() >= 1024*1024 {
+				err := c.StopRecording(id)
+				if err != nil {
+					log.Println(err)
+					break
+				}
+
+				c.StartRecording(id)
+				break
+			}
+
 			err := vf.Write()
 
 			if err != nil {

@@ -56,6 +56,7 @@ func (c *Capture) VideoRecord(name, codec string) (*VideoRecord, error) {
 	}
 
 	v := &VideoRecord{
+		name:        name,
 		videoWriter: writer,
 		capture:     c,
 	}
