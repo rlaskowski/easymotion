@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/rlaskowski/easymotion/capture"
+	"github.com/rlaskowski/easymotion/config"
 )
 
 type CaptureService struct {
@@ -109,7 +110,7 @@ func (c *CaptureService) StartRecording(id int) error {
 
 	go func() {
 		for {
-			if vf.Size() >= 2*(1024*1024) {
+			if vf.Size() >= config.ToBytes(10) {
 				if err := c.StopRecording(id); err != nil {
 					log.Println(err)
 					break

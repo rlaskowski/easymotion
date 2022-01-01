@@ -11,10 +11,16 @@ func SqlitePath() string {
 	return filepath.Join(path, "easymotion.db")
 }
 
+//Full, current project path
 func ProjectPath() string {
 	wd, err := os.Getwd()
 	if err != nil {
 		return ""
 	}
 	return wd
+}
+
+//Converting megabytes to bytes
+func ToBytes(m int64) int64 {
+	return m * (1024 * 1024)
 }
