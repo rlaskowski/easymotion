@@ -2,18 +2,41 @@ package capture
 
 import (
 	"errors"
+	"image"
+	"image/color"
 	"log"
+	"time"
 
 	"gocv.io/x/gocv"
+)
+
+var (
+	DefaultCaptureOptions = CaptureOptions{
+		timeline: true,
+	}
 )
 
 type Capture struct {
 	number   int
 	campture *gocv.VideoCapture
 	mat      gocv.Mat
+	options  CaptureOptions
+}
+
+type CaptureOptions struct {
+	//Showing date and time on all video
+	timeline bool
 }
 
 func Open(number int) (*Capture, error) {
+	return open(number, DefaultCaptureOptions)
+}
+
+func OpenWithOptions(number int, options CaptureOptions) (*Capture, error) {
+	return open(number, options)
+}
+
+func open(number int, options CaptureOptions) (*Capture, error) {
 	capture, err := gocv.OpenVideoCapture(number)
 	if err != nil {
 		return nil, err
@@ -23,6 +46,7 @@ func Open(number int) (*Capture, error) {
 		number:   number,
 		campture: capture,
 		mat:      gocv.NewMat(),
+		options:  options,
 	}
 
 	return camera, nil
@@ -73,6 +97,10 @@ func (c *Capture) readMat() <-chan gocv.Mat {
 			log.Println("nothing to read from capture")
 		}
 
+		if c.options.timeline {
+			c.showDatetime()
+		}
+
 		match <- c.mat
 
 		close(match)
@@ -98,4 +126,15 @@ func (c *Capture) Read(b []byte) (n int, err error) {
 	buff.Close()
 
 	return n, nil
+}
+
+func (c *Capture) showDatetime() {
+	white := color.RGBA{255, 255, 255, 0}
+	t := time.Now().Format("02-01-2006 15:04:05")
+
+	size := gocv.GetTextSize(t, gocv.FontHersheyPlain, 1, 1)
+	//pt := image.Pt(r.Min.X+(r.Min.X/2)-(size.X/2), r.Min.Y-2)
+	//pt := image.Pt(80+(80/2)-(size.X/2), 20)
+	pt := image.Pt(70+(80/2)-(size.X/2), c.mat.Rows()-20)
+	gocv.PutText(&c.mat, t, pt, gocv.FontHersheyPlain, 1, white, 1)
 }
