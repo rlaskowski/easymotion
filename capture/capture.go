@@ -133,8 +133,7 @@ func (c *Capture) showDatetime() {
 	t := time.Now().Format("02-01-2006 15:04:05")
 
 	size := gocv.GetTextSize(t, gocv.FontHersheyPlain, 1, 1)
-	//pt := image.Pt(r.Min.X+(r.Min.X/2)-(size.X/2), r.Min.Y-2)
-	//pt := image.Pt(80+(80/2)-(size.X/2), 20)
-	pt := image.Pt(70+(80/2)-(size.X/2), c.mat.Rows()-20)
+	pt := image.Pt((c.mat.Cols()-20)-(size.X), (c.mat.Rows()-20)-size.Y)
+
 	gocv.PutText(&c.mat, t, pt, gocv.FontHersheyPlain, 1, white, 1)
 }
