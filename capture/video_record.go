@@ -1,7 +1,6 @@
 package capture
 
 import (
-	"errors"
 	"io"
 	"os"
 
@@ -16,8 +15,9 @@ type VideoRecord struct {
 
 func (v *VideoRecord) Write() error {
 	mat := <-v.capture.readMat()
+
 	if mat.Empty() {
-		return errors.New("empty mat")
+		return nil
 	}
 
 	if v.IsOpened() {
