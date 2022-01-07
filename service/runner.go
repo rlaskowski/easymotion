@@ -1,9 +1,6 @@
 package service
 
-import "github.com/rlaskowski/easymotion/db"
-
 type Runner interface {
-	Sqlite() *db.Sqlite
 	CaptureService() *CaptureService
 }
 

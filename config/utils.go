@@ -7,8 +7,13 @@ import (
 
 func SqlitePath() string {
 	path := ProjectPath()
-
 	return filepath.Join(path, "easymotion.db")
+}
+
+//Path name where is store immudb files
+func ImmuDBPath() string {
+	path := ProjectPath()
+	return filepath.Join(path, "immudb")
 }
 
 //Full, current project path
