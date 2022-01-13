@@ -13,7 +13,11 @@ func SqlitePath() string {
 //Path name where is store immudb files
 func ImmuDBPath() string {
 	path := ProjectPath()
-	return filepath.Join(path, "immudb")
+	return filepath.Join(path, "data")
+}
+
+func ProjectName() string {
+	return "easymotion"
 }
 
 //Full, current project path

@@ -15,7 +15,7 @@ type Service struct {
 func NewService() *Service {
 	s := &Service{
 		captureService: NewCaptureService(),
-		immuDBService:  NewImmuDBService(config.ImmuDBPath()),
+		immuDBService:  NewImmuDBService(config.ProjectName(), config.ImmuDBPath()),
 	}
 
 	s.httpServer = NewHttpServer(s)
