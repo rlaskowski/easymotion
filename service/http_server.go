@@ -3,6 +3,7 @@ package service
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -20,19 +21,24 @@ type HttpServer struct {
 	cancel  context.CancelFunc
 	context context.Context
 	echo    *echo.Echo
-	Runner  Runner
 	mutex   *sync.Mutex
 }
 
-func NewHttpServer(runner Runner) *HttpServer {
+func (HttpServer) CreateService() *ServiceInfo {
+	return &ServiceInfo{
+		ID:        "service.http.server",
+		Intstance: newHttpServer(),
+	}
+}
+
+func newHttpServer() *HttpServer {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	return &HttpServer{
 		cancel:  cancel,
 		context: ctx,
 		echo:    echo.New(),
-		Runner:  runner,
-		mutex:   new(sync.Mutex),
+		mutex:   &sync.Mutex{},
 	}
 }
 
@@ -40,6 +46,7 @@ func (h *HttpServer) prepareEndpoints() {
 	h.echo.GET("/stream/:captureID", h.Stream)
 	h.echo.POST("/capture/:captureID/recording/start", h.StartRecording)
 	h.echo.POST("/capture/:captureID/recording/stop", h.StopRecording)
+	h.echo.POST("/user/create", h.CreateUser)
 }
 
 func (h *HttpServer) configure() {
@@ -85,7 +92,14 @@ func (h *HttpServer) StartRecording(c echo.Context) error {
 		})
 	}
 
-	err = h.Runner.CaptureService().StartRecording(captureID)
+	service, err := h.captureService()
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"capture error": err.Error(),
+		})
+	}
+
+	err = service.StartRecording(captureID)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{
 			"video record problem": err.Error(),
@@ -103,7 +117,14 @@ func (h *HttpServer) StopRecording(c echo.Context) error {
 		})
 	}
 
-	err = h.Runner.CaptureService().StopRecording(captureID)
+	service, err := h.captureService()
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"capture error": err.Error(),
+		})
+	}
+
+	err = service.StopRecording(captureID)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{
 			"video record problem": err.Error(),
@@ -121,30 +142,27 @@ func (h *HttpServer) Stream(c echo.Context) error {
 		})
 	}
 
-	capture, err := h.Runner.CaptureService().Capture(captureID)
+	service, err := h.captureService()
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{
 			"capture error": err.Error(),
 		})
 	}
 
-	//buff := make([]byte, 1024*1024)
+	capture, err := service.Capture(captureID)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"capture error": err.Error(),
+		})
+	}
+
 	boundary := "STREAMCAMERA"
 
 	c.Response().Header().Set("Content-Type", fmt.Sprintf("multipart/x-mixed-replace; boundary=%s", boundary))
 	c.Response().WriteHeader(http.StatusOK)
 
 	for {
-		/* 	n, err := cam.Read(buff)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, map[string]string{
-				"error": fmt.Sprintf("camera read problem: %s", err.Error()),
-			})
-			cam.Close()
-			break
-		} */
-
-		bch := h.Runner.CaptureService().Stream(capture)
+		bch := service.Stream(capture)
 		buff := <-bch
 
 		b := bytes.NewBuffer(buff)
@@ -172,4 +190,23 @@ func (h *HttpServer) Stream(c echo.Context) error {
 	}
 
 	return nil
+}
+
+func (h *HttpServer) CreateUser(c echo.Context) error {
+	return nil
+}
+
+//Returns capture service after mapping from ServiceInfo struct
+func (h *HttpServer) captureService() (*CaptureService, error) {
+	service, err := GetService("service.capture")
+	if err != nil {
+		return nil, err
+	}
+
+	capture, ok := service.Intstance.(*CaptureService)
+	if !ok {
+		return nil, errors.New("bad mapping from ServiceInfo to CaptureService")
+	}
+
+	return capture, nil
 }

@@ -1,41 +1,86 @@
 package service
 
 import (
+	"errors"
+	"fmt"
 	"log"
+	"sync"
+)
 
-	"github.com/rlaskowski/easymotion/config"
+var (
+	srvRWMutex = &sync.RWMutex{}
+	serviceMap = make(map[string]*ServiceInfo)
 )
 
 type Service struct {
-	httpServer     *HttpServer
-	captureService *CaptureService
-	immuDBService  *ImmuDBService
+}
+
+type ServiceRunner interface {
+	Start() error
+	Stop() error
+	CreateService() *ServiceInfo
+}
+
+type ServiceInfo struct {
+	ID        string
+	Intstance ServiceRunner
 }
 
 func NewService() *Service {
-	s := &Service{
-		captureService: NewCaptureService(),
-		immuDBService:  NewImmuDBService(config.ProjectName(), config.ImmuDBPath()),
-	}
-
-	s.httpServer = NewHttpServer(s)
-
-	return s
+	return &Service{}
 }
 
+func RegisterService(runner ServiceRunner) error {
+	service := runner.CreateService()
+
+	if service.ID == "" {
+		return errors.New("no service id")
+	}
+
+	srvRWMutex.Lock()
+	defer srvRWMutex.Unlock()
+
+	if _, ok := serviceMap[service.ID]; ok {
+		return fmt.Errorf("service %s has been already registered", service.ID)
+	}
+
+	serviceMap[service.ID] = service
+
+	return nil
+}
+
+func GetService(id string) (*ServiceInfo, error) {
+	srvRWMutex.Lock()
+	defer srvRWMutex.Unlock()
+
+	service, ok := serviceMap[id]
+	if !ok {
+		return nil, fmt.Errorf("service %s not found", id)
+	}
+
+	return service, nil
+}
+
+func GetServiceID(instance interface{}) string {
+	srvRWMutex.Lock()
+	defer srvRWMutex.Unlock()
+
+	service, ok := instance.(ServiceInfo)
+	if !ok {
+		return ""
+	}
+
+	return service.ID
+}
+
+// Starting all services
 func (s *Service) Start() error {
 	var result error
 
-	if result := s.captureService.Start(); result != nil {
-		log.Printf("couldn't start capture service due to: %s", result.Error())
-	}
-
-	if result := s.immuDBService.Start(); result != nil {
-		log.Printf("immudb dabase start problem: %s", result.Error())
-	}
-
-	if result := s.httpServer.Start(); result != nil {
-		log.Printf("http server start problem: %s", result.Error())
+	for _, v := range serviceMap {
+		if result := v.Intstance.Start(); result != nil {
+			log.Printf("couldn't start service %s due to: %s", v.ID, result.Error())
+		}
 	}
 
 	if result == nil {
@@ -45,24 +90,17 @@ func (s *Service) Start() error {
 	return result
 }
 
+// Stopping all services
 func (s *Service) Stop() error {
+	var result error
+
 	log.Println("Stopping all services...")
 
-	if err := s.captureService.Stop(); err != nil {
-		log.Printf("couldn't stop campture service due to: %s", err.Error())
+	for _, v := range serviceMap {
+		if result := v.Intstance.Stop(); result != nil {
+			log.Printf("couldn't start service %s due to: %s", v.ID, result.Error())
+		}
 	}
 
-	if err := s.immuDBService.Stop(); err != nil {
-		log.Printf("immudb database stop problem: %s", err.Error())
-	}
-
-	if err := s.httpServer.Stop(); err != nil {
-		log.Printf("http server stop problem: %s", err.Error())
-	}
-
-	return nil
-}
-
-func (s *Service) CaptureService() *CaptureService {
-	return s.captureService
+	return result
 }

@@ -5,18 +5,28 @@ import (
 	"log"
 	"os"
 
+	"github.com/rlaskowski/easymotion/config"
 	"github.com/rlaskowski/easymotion/service"
 )
 
+func init() {
+	service.RegisterService(&service.HttpServer{})
+	service.RegisterService(&service.CaptureService{})
+	service.RegisterService(&service.ImmuDBService{})
+}
+
 func main() {
-
-	if len(os.Args) < 2 {
-		fmt.Println("Please select option to run for example: install | uninstall | restart | run")
-	}
-
-	service, err := service.CreateSystemService()
+	systemService, err := service.CreateSystemService(config.ProjectPath())
 	if err != nil {
 		log.Fatalf("Unexpected error: %s", err.Error())
+	}
+
+	runCommand(systemService)
+}
+
+func runCommand(service *service.SystemService) {
+	if len(os.Args) < 2 {
+		fmt.Println("Please select option to run, for example: install | uninstall | restart | run")
 	}
 
 	switch os.Args[1] {

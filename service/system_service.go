@@ -2,19 +2,18 @@ package service
 
 import (
 	"github.com/kardianos/service"
-	"github.com/rlaskowski/easymotion/config"
 )
 
 type SystemService struct {
 	service service.Service
 }
 
-func CreateSystemService() (*SystemService, error) {
+func CreateSystemService(path string) (*SystemService, error) {
 	service, err := service.New(NewSystemContext(), &service.Config{
-		Name:             "EasyMotion",
-		DisplayName:      "EasyMotion",
-		Description:      "EasyMotion",
-		WorkingDirectory: config.ProjectPath(),
+		Name:             "easymotion",
+		DisplayName:      "easymotion",
+		Description:      "video capturing",
+		WorkingDirectory: path,
 		Option: service.KeyValue{
 			"KeepAlive": true,
 			"RunAtLoad": true,

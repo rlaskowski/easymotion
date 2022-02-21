@@ -15,7 +15,14 @@ type CaptureService struct {
 	videosRecord map[int]*capture.VideoRecord
 }
 
-func NewCaptureService() *CaptureService {
+func (CaptureService) CreateService() *ServiceInfo {
+	return &ServiceInfo{
+		ID:        "service.capture",
+		Intstance: newCaptureService(),
+	}
+}
+
+func newCaptureService() *CaptureService {
 	return &CaptureService{
 		captures:     make(map[int]*capture.Capture),
 		videosRecord: make(map[int]*capture.VideoRecord),
