@@ -1,9 +1,17 @@
 GOBIN := go
 BUILDNAME := easymotion
 
-build:
+build-linux:
 	@-$(MAKE) clean
-	GOOS=linux GOARCH=arm go build -o dist/ cmd/easymotion/main.go
+	GOOS=linux build -o dist/dist/easymotion cmd/easymotion/main.go
+
+build-darwin-arm:
+	@-$(MAKE) clean
+	GOOS=darwin GOARCH=arm64 go build -o dist/easymotion cmd/easymotion/main.go
+
+build-raspi:
+	@-$(MAKE) clean
+	GOOS=linux GOARCH=arm go build -o dist/dist/easymotion cmd/easymotion/main.go
 
 get-dependencies:
 	@go get -d -v ./...
