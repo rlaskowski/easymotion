@@ -1,22 +1,25 @@
-package main
+package cmd
 
 import (
 	"fmt"
 	"log"
 	"os"
 
-	"github.com/rlaskowski/easymotion/service"
+	"github.com/rlaskowski/easymotion"
+	"github.com/rlaskowski/easymotion/service/dbservice"
+	"github.com/rlaskowski/easymotion/service/httpservice"
+	"github.com/rlaskowski/easymotion/service/opencvservice"
 )
 
-func main() {
+func init() {
+	easymotion.RegisterService(&httpservice.HttpServer{})
+	easymotion.RegisterService(&opencvservice.OpenCVService{})
+	easymotion.RegisterService(&dbservice.ImmuDBService{})
+}
 
+func RunCommand(service *easymotion.SystemService) {
 	if len(os.Args) < 2 {
-		fmt.Println("Please select option to run for example: install | uninstall | restart | run")
-	}
-
-	service, err := service.CreateSystemService()
-	if err != nil {
-		log.Fatalf("Unexpected error: %s", err.Error())
+		fmt.Println("Please select option to run, for example: install | uninstall | restart | run")
 	}
 
 	switch os.Args[1] {

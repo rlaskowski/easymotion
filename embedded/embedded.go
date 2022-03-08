@@ -1,6 +1,6 @@
-package resources
+package embedded
 
 import "embed"
 
-//go:embed sqlite
+//go:embed immudb
 var Files embed.FS
