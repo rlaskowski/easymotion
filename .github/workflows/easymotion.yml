@@ -18,6 +18,14 @@ jobs:
     name: ${{ matrix.os }} @ Go ${{ matrix.go }}
     runs-on: ${{ matrix.os }}
     steps:
+      - name: Easymotion bin exists
+        id: easymotion_exists
+        run: andstor/file-existence-action@v1
+        with:
+          files: "dist/easymotion"
+      - name: Stop Easymotion
+        if: "steps.easymotion_exists.outputs.files_exists = 'true'"
+        run: dist/easymotion uninstall
       - name: Checkout Repo
         uses: actions/checkout@v2
 
