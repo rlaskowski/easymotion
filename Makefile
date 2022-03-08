@@ -3,7 +3,7 @@ BUILDNAME := easymotion
 
 build-linux:
 	@-$(MAKE) clean
-	GOOS=linux build -o dist/dist/easymotion cmd/easymotion/main.go
+	GOOS=linux build -o dist/easymotion cmd/easymotion/main.go
 
 build-darwin-arm:
 	@-$(MAKE) clean
@@ -11,7 +11,7 @@ build-darwin-arm:
 
 build-raspi:
 	@-$(MAKE) clean
-	GOOS=linux GOARCH=arm go build -o dist/dist/easymotion cmd/easymotion/main.go
+	GOOS=linux GOARCH=arm go build -o dist/easymotion cmd/easymotion/main.go
 
 get-dependencies:
 	@go get -d -v ./...
