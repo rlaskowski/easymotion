@@ -1,4 +1,4 @@
-package service
+package opencvservice
 
 import (
 	"fmt"
@@ -6,59 +6,60 @@ import (
 	"log"
 	"time"
 
+	"github.com/rlaskowski/easymotion"
 	"github.com/rlaskowski/easymotion/capture"
 	"github.com/rlaskowski/easymotion/config"
 )
 
-type CaptureService struct {
+type OpenCVService struct {
 	captures     map[int]*capture.Capture
 	videosRecord map[int]*capture.VideoRecord
 }
 
-func (CaptureService) CreateService() *ServiceInfo {
-	return &ServiceInfo{
-		ID:        "service.capture",
+func (OpenCVService) CreateService() *easymotion.ServiceInfo {
+	return &easymotion.ServiceInfo{
+		ID:        "service.opencv",
 		Intstance: newCaptureService(),
 	}
 }
 
-func newCaptureService() *CaptureService {
-	return &CaptureService{
+func newCaptureService() *OpenCVService {
+	return &OpenCVService{
 		captures:     make(map[int]*capture.Capture),
 		videosRecord: make(map[int]*capture.VideoRecord),
 	}
 }
 
-//Starting all process
+// Starting all process
 //
-//for example create active capture list
-func (c *CaptureService) Start() error {
+// for example create active capture list
+func (o *OpenCVService) Start() error {
 	cap, err := capture.Open(0)
 	if err != nil {
 		return err
 	}
 
-	c.captures[0] = cap
+	o.captures[0] = cap
 
 	return nil
 }
 
-//Stopping all active processes
-func (c *CaptureService) Stop() error {
-	if err := c.StopRecording(0); err != nil {
+// Stopping all active processes
+func (o *OpenCVService) Stop() error {
+	if err := o.StopRecording(0); err != nil {
 		return err
 	}
 
-	if cap, ok := c.captures[0]; ok {
+	if cap, ok := o.captures[0]; ok {
 		return cap.Close()
 	}
 
 	return nil
 }
 
-//Finding capture by id
-func (c *CaptureService) Capture(id int) (*capture.Capture, error) {
-	cap, ok := c.captures[id]
+// Finding capture by id
+func (o *OpenCVService) Capture(id int) (*capture.Capture, error) {
+	cap, ok := o.captures[id]
 	if !ok {
 		return nil, fmt.Errorf("could not find capture %v", id)
 	}
@@ -66,9 +67,9 @@ func (c *CaptureService) Capture(id int) (*capture.Capture, error) {
 	return cap, nil
 }
 
-//Finding Video Record by capture id
-func (c *CaptureService) VideoRecord(id int) (*capture.VideoRecord, error) {
-	vr, ok := c.videosRecord[id]
+// Finding Video Record by capture id
+func (o *OpenCVService) VideoRecord(id int) (*capture.VideoRecord, error) {
+	vr, ok := o.videosRecord[id]
 	if !ok {
 		return nil, fmt.Errorf("could not find video record, capture %v", id)
 	}
@@ -76,8 +77,8 @@ func (c *CaptureService) VideoRecord(id int) (*capture.VideoRecord, error) {
 	return vr, nil
 }
 
-//Stream video file
-func (c *CaptureService) Stream(capture *capture.Capture) <-chan []byte {
+// Stream video file
+func (o *OpenCVService) Stream(capture *capture.Capture) <-chan []byte {
 	imgch := make(chan []byte, 10)
 
 	go func() {
@@ -94,14 +95,14 @@ func (c *CaptureService) Stream(capture *capture.Capture) <-chan []byte {
 	return imgch
 }
 
-//Starting recording by capture id
-func (c *CaptureService) StartRecording(id int) error {
-	cap, err := c.Capture(id)
+// Starting recording by capture id
+func (o *OpenCVService) StartRecording(id int) error {
+	cap, err := o.Capture(id)
 	if err != nil {
 		return err
 	}
 
-	if _, err := c.VideoRecord(id); err == nil {
+	if _, err := o.VideoRecord(id); err == nil {
 		return fmt.Errorf("video record is already exist, capture %v", id)
 	}
 
@@ -113,17 +114,17 @@ func (c *CaptureService) StartRecording(id int) error {
 		return err
 	}
 
-	c.videosRecord[id] = vf
+	o.videosRecord[id] = vf
 
 	go func() {
 		for {
 			if vf.Size() >= config.ToBytes(10) {
-				if err := c.StopRecording(id); err != nil {
+				if err := o.StopRecording(id); err != nil {
 					log.Println(err)
 					break
 				}
 
-				if err := c.StartRecording(id); err != nil {
+				if err := o.StartRecording(id); err != nil {
 					log.Println(err)
 				}
 				break
@@ -143,9 +144,9 @@ func (c *CaptureService) StartRecording(id int) error {
 	return nil
 }
 
-//Stopping recording by capture id
-func (c *CaptureService) StopRecording(id int) error {
-	vr, err := c.VideoRecord(id)
+// Stopping recording by capture id
+func (o *OpenCVService) StopRecording(id int) error {
+	vr, err := o.VideoRecord(id)
 	if err != nil {
 		return err
 	}
@@ -154,7 +155,7 @@ func (c *CaptureService) StopRecording(id int) error {
 		return err
 	}
 
-	delete(c.videosRecord, id)
+	delete(o.videosRecord, id)
 
 	return nil
 }

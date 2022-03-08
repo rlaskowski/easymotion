@@ -1,4 +1,4 @@
-package service
+package dbservice
 
 import (
 	"fmt"
@@ -6,6 +6,7 @@ import (
 
 	"github.com/codenotary/immudb/embedded/sql"
 	"github.com/codenotary/immudb/embedded/store"
+	"github.com/rlaskowski/easymotion"
 	"github.com/rlaskowski/easymotion/config"
 	"github.com/rlaskowski/easymotion/embedded"
 )
@@ -16,8 +17,8 @@ type ImmuDBService struct {
 	engine     *sql.Engine
 }
 
-func (ImmuDBService) CreateService() *ServiceInfo {
-	return &ServiceInfo{
+func (ImmuDBService) CreateService() *easymotion.ServiceInfo {
+	return &easymotion.ServiceInfo{
 		ID:        "service.database.immudb",
 		Intstance: newImmuDBService(config.ProjectName(), config.ImmuDBPath()),
 	}

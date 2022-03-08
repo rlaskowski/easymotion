@@ -1,4 +1,4 @@
-package service
+package easymotion
 
 import (
 	"errors"

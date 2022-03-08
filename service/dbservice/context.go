@@ -1,4 +1,4 @@
-package db
+package dbservice
 
 import "github.com/rlaskowski/easymotion/auth"
 

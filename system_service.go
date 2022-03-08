@@ -1,4 +1,4 @@
-package service
+package easymotion
 
 import (
 	"github.com/kardianos/service"

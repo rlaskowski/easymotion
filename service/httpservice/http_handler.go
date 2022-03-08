@@ -1,90 +1,43 @@
-package service
+package httpservice
 
 import (
 	"bytes"
-	"context"
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"mime/multipart"
 	"net/http"
 	"net/textproto"
 	"strconv"
-	"sync"
 
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
+	"github.com/rlaskowski/easymotion"
+	"github.com/rlaskowski/easymotion/service/opencvservice"
 )
 
-type HttpServer struct {
-	cancel  context.CancelFunc
-	context context.Context
-	echo    *echo.Echo
-	mutex   *sync.Mutex
+type HttpHandler struct {
+	echo *echo.Echo
 }
 
-func (HttpServer) CreateService() *ServiceInfo {
-	return &ServiceInfo{
-		ID:        "service.http.server",
-		Intstance: newHttpServer(),
-	}
+func NewHttpHandler(echo *echo.Echo) *HttpHandler {
+	return &HttpHandler{echo}
 }
 
-func newHttpServer() *HttpServer {
-	ctx, cancel := context.WithCancel(context.Background())
-
-	return &HttpServer{
-		cancel:  cancel,
-		context: ctx,
-		echo:    echo.New(),
-		mutex:   &sync.Mutex{},
-	}
-}
-
-func (h *HttpServer) prepareEndpoints() {
+//Creating endpoints list
+func (h *HttpHandler) CreateEndpoints() {
 	h.echo.GET("/stream/:captureID", h.Stream)
 	h.echo.POST("/capture/:captureID/recording/start", h.StartRecording)
 	h.echo.POST("/capture/:captureID/recording/stop", h.StopRecording)
 	h.echo.POST("/user/create", h.CreateUser)
 }
 
-func (h *HttpServer) configure() {
-	h.echo.HideBanner = true
-	h.echo.HidePort = true
-	h.echo.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
-		Format: `Method: ${method}, Path: ${path}, Remote IP: ${remote_ip}, Status: ${status}`,
-	}))
-}
-
-func (h *HttpServer) Start() error {
-	log.Println("Starting Http Server")
-
-	h.configure()
-	h.prepareEndpoints()
-
-	go func() {
-		if err := h.echo.Start(":9090"); err != nil {
-			log.Fatalf("could not start http server due to: %s", err.Error())
-		}
-	}()
-
+//Creating system user
+func (h *HttpHandler) CreateUser(c echo.Context) error {
+	c.NoContent(http.StatusCreated)
 	return nil
 }
 
-func (h *HttpServer) Stop() error {
-	h.cancel()
-
-	log.Println("Stopping Http Server")
-
-	if err := h.echo.Close(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (h *HttpServer) StartRecording(c echo.Context) error {
+func (h *HttpHandler) StartRecording(c echo.Context) error {
 	captureID, err := strconv.Atoi(c.Param("captureID"))
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{
@@ -92,7 +45,7 @@ func (h *HttpServer) StartRecording(c echo.Context) error {
 		})
 	}
 
-	service, err := h.captureService()
+	service, err := h.opencvService()
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{
 			"capture error": err.Error(),
@@ -109,7 +62,7 @@ func (h *HttpServer) StartRecording(c echo.Context) error {
 	return c.JSON(http.StatusOK, "Recording was started")
 }
 
-func (h *HttpServer) StopRecording(c echo.Context) error {
+func (h *HttpHandler) StopRecording(c echo.Context) error {
 	captureID, err := strconv.Atoi(c.Param("captureID"))
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{
@@ -117,7 +70,7 @@ func (h *HttpServer) StopRecording(c echo.Context) error {
 		})
 	}
 
-	service, err := h.captureService()
+	service, err := h.opencvService()
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{
 			"capture error": err.Error(),
@@ -134,7 +87,7 @@ func (h *HttpServer) StopRecording(c echo.Context) error {
 	return c.JSON(http.StatusOK, "Recording was stopped")
 }
 
-func (h *HttpServer) Stream(c echo.Context) error {
+func (h *HttpHandler) Stream(c echo.Context) error {
 	captureID, err := strconv.Atoi(c.Param("captureID"))
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{
@@ -142,7 +95,7 @@ func (h *HttpServer) Stream(c echo.Context) error {
 		})
 	}
 
-	service, err := h.captureService()
+	service, err := h.opencvService()
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{
 			"capture error": err.Error(),
@@ -192,21 +145,17 @@ func (h *HttpServer) Stream(c echo.Context) error {
 	return nil
 }
 
-func (h *HttpServer) CreateUser(c echo.Context) error {
-	return nil
-}
-
 //Returns capture service after mapping from ServiceInfo struct
-func (h *HttpServer) captureService() (*CaptureService, error) {
-	service, err := GetService("service.capture")
+func (h *HttpHandler) opencvService() (*opencvservice.OpenCVService, error) {
+	service, err := easymotion.GetService("service.opencv")
 	if err != nil {
 		return nil, err
 	}
 
-	capture, ok := service.Intstance.(*CaptureService)
+	opencvSrv, ok := service.Intstance.(*opencvservice.OpenCVService)
 	if !ok {
-		return nil, errors.New("bad mapping from ServiceInfo to CaptureService")
+		return nil, errors.New("bad mapping from ServiceInfo to OpenCVService")
 	}
 
-	return capture, nil
+	return opencvSrv, nil
 }
