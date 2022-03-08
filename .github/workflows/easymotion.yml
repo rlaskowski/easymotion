@@ -27,7 +27,7 @@ jobs:
           go-version: ${{ matrix.go }}
 
       - name: Build
-        run: make build-raspi
+        run: make build
 
       - name: Install Service
         run: sudo dist/easymotion install
