@@ -17,7 +17,7 @@ jobs:
         go: [1.17.x]
     name: ${{ matrix.os }} @ Go ${{ matrix.go }}
     runs-on: ${{ matrix.os }}
-    steps:
+    steps:        
       - name: Checkout Repo
         uses: actions/checkout@v2
 
@@ -29,8 +29,13 @@ jobs:
       - name: Build
         run: make build-raspi
 
+      - name: Copy to installation directory
+        run: |
+          sudo mkdir -p /opt/easymotion
+          sudo cp dist/easymotion /opt/easymotion/easymotion
+
       - name: Install Service
-        run: sudo dist/easymotion install
+        run: sudo /opt/easymotion/easymotion install
 
 
       
