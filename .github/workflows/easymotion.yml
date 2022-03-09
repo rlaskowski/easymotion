@@ -30,7 +30,7 @@ jobs:
         run: make build-raspi
 
       - name: Copy to installation directory
-        run: mv dist/easymotion /opt/easymotion/easymotion
+        run: cp dist/easymotion /opt/easymotion/easymotion
 
       - name: Install Service
         run: sudo /opt/easymotion/easymotion install
