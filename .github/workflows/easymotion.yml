@@ -17,15 +17,7 @@ jobs:
         go: [1.17.x]
     name: ${{ matrix.os }} @ Go ${{ matrix.go }}
     runs-on: ${{ matrix.os }}
-    steps:
-      - name: Easymotion bin exists
-        id: easymotion_exists
-        run: andstor/file-existence-action@v1
-        with:
-          files: "dist/easymotion"
-      - name: Stop Easymotion
-        if: "steps.easymotion_exists.outputs.files_exists = 'true'"
-        run: dist/easymotion uninstall
+    steps:        
       - name: Checkout Repo
         uses: actions/checkout@v2
 
@@ -37,8 +29,11 @@ jobs:
       - name: Build
         run: make build-raspi
 
+      - name: Copy to installation directory
+        run: mv dist/easymotion /opt/easymotion/easymotion
+
       - name: Install Service
-        run: sudo dist/easymotion install
+        run: sudo /opt/easymotion/easymotion install
 
 
       
