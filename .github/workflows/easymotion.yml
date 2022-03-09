@@ -31,8 +31,8 @@ jobs:
 
       - name: Copy to installation directory
         run: |
-          mkdir -p /opt/easymotion
-          cp dist/easymotion /opt/easymotion/easymotion
+          sudo mkdir -p /opt/easymotion
+          sudo cp dist/easymotion /opt/easymotion/easymotion
 
       - name: Install Service
         run: sudo /opt/easymotion/easymotion install
