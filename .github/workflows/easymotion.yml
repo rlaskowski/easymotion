@@ -35,7 +35,9 @@ jobs:
           sudo cp dist/easymotion /opt/easymotion/easymotion
 
       - name: Install Service
-        run: sudo /opt/easymotion/easymotion install
+        run: |
+          cd /opt/easymotion
+          sudo easymotion install
 
 
       
