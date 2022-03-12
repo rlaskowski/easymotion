@@ -1,7 +1,11 @@
-FROM golang:1.17.8-alpine3.15
+FROM gocv/opencv:4.5.4
 
-WORKDIR /usr/local/go/easymotion
+ENV GOPATH /go
 
-COPY dist/easymotion .
+WORKDIR /go/src/gocv.io/x/gocv
 
-CMD [ "/usr/local/go/easymotion/easymotion", "run" ]
+COPY . .
+
+RUN make build-linux
+
+CMD ["dist/easymotion", "run"]
