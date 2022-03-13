@@ -6,6 +6,6 @@ WORKDIR /go/src/gocv.io/x/gocv
 
 COPY . .
 
-RUN go build -o dist/easymotion cmd/easymotion/main.go
+RUN make build-raspi
 
 CMD ["dist/easymotion", "run"]
