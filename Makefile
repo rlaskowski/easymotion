@@ -1,10 +1,9 @@
 GOBIN := go
 BUILDNAME := easymotion
-VERSION := 0.0.1
 
 build-docker:
 	@-$(MAKE) clean
-	docker build -t rlaskowski/easymotion:${VERSION} .
+	docker build -t rlaskowski/easymotion .
 
 build-linux:
 	@-$(MAKE) clean

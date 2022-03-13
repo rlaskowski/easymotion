@@ -26,18 +26,16 @@ jobs:
         with:
           go-version: ${{ matrix.go }}
 
-      - name: Build
-        run: make build-raspi
+      - name: DockerHub Login
+        uses: docker/login-action@v1
+        with:
+          username: ${{ DOCKERHUB_USERNAME }}
+          password: ${{ DOCKERHUB_TOKEN }}
 
-      - name: Copy to installation directory
-        run: |
-          sudo mkdir -p /opt/easymotion
-          sudo cp dist/easymotion /opt/easymotion/easymotion
-
-      - name: Install Service
-        run: |
-          cd /opt/easymotion
-          sudo easymotion install
+      - name: Docker Build And Push
+        uses: docker/build-push-action@v2
+        with:
+          push: true
 
 
       
