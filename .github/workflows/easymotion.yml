@@ -36,7 +36,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: true
-          tag: rlaskowski/easymotion:latest
+          tags: rlaskowski/easymotion:latest
 
 
       
