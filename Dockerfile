@@ -6,6 +6,6 @@ WORKDIR /go/src/gocv.io/x/gocv
 
 COPY . .
 
-RUN make build-linux
+RUN go build -o dist/easymotion cmd/easymotion/main.go
 
 CMD ["dist/easymotion", "run"]
