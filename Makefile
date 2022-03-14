@@ -1,9 +1,13 @@
 GOBIN := go
 BUILDNAME := easymotion
 
+build-docker:
+	@-$(MAKE) clean
+	docker build -t rlaskowski/easymotion .
+
 build-linux:
 	@-$(MAKE) clean
-	GOOS=linux build -o dist/easymotion cmd/easymotion/main.go
+	GOOS=linux go build -o dist/easymotion cmd/easymotion/main.go
 
 build-darwin-arm:
 	@-$(MAKE) clean
