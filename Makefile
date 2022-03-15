@@ -7,23 +7,23 @@ build-docker:
 
 build-linux:
 	@-$(MAKE) clean
-	GOOS=linux go build -o dist/easymotion cmd/easymotion/main.go
+	GOOS=linux ${GOBIN} build -o dist/easymotion cmd/easymotion/main.go
 
 build-darwin-arm:
 	@-$(MAKE) clean
-	GOOS=darwin GOARCH=arm64 go build -o dist/easymotion cmd/easymotion/main.go
+	GOOS=darwin GOARCH=arm64 ${GOBIN} build -o dist/easymotion cmd/easymotion/main.go
 
 build-raspi:
 	@-$(MAKE) clean
-	GOOS=linux GOARCH=arm go build -o dist/easymotion cmd/easymotion/main.go
+	GOOS=linux GOARCH=arm ${GOBIN} build -o dist/easymotion cmd/easymotion/main.go
 
 get-dependencies:
-	@go get -d -v ./...
+	@-${GOBIN} get -d -v ./...
 
 run:
-	go run cmd/easymotion/main.go run
+	${GOBIN} run cmd/easymotion/main.go run
 
 clean:
-	@rm -Rf dist 
+	@rm -Rf dist data
 
 
