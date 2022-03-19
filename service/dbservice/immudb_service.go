@@ -52,6 +52,10 @@ func (i *ImmuDBService) Stop() error {
 	return i.immuStore.Close()
 }
 
+func (i *ImmuDBService) Engine() *sql.Engine {
+	return i.engine
+}
+
 func (i *ImmuDBService) initDB() error {
 	catalog, err := i.engine.Catalog(nil)
 	if err != nil {

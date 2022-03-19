@@ -1,4 +1,4 @@
-package capture
+package opencvservice
 
 import (
 	"errors"
@@ -28,7 +28,7 @@ type CaptureOptions struct {
 	timeline bool
 }
 
-func Open(number int) (*Capture, error) {
+func OpenCapture(number int) (*Capture, error) {
 	return open(number, DefaultCaptureOptions)
 }
 

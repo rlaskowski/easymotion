@@ -2,25 +2,33 @@ package httpservice
 
 import (
 	"bytes"
-	"errors"
+	"encoding/json"
 	"fmt"
 	"io"
 	"mime/multipart"
 	"net/http"
 	"net/textproto"
 	"strconv"
+	"sync"
 
 	"github.com/labstack/echo/v4"
-	"github.com/rlaskowski/easymotion"
-	"github.com/rlaskowski/easymotion/service/opencvservice"
+	"github.com/rlaskowski/easymotion/app"
 )
 
 type HttpHandler struct {
-	echo *echo.Echo
+	echo    *echo.Echo
+	appPool sync.Pool
 }
 
 func NewHttpHandler(echo *echo.Echo) *HttpHandler {
-	return &HttpHandler{echo}
+	return &HttpHandler{
+		echo: echo,
+		appPool: sync.Pool{
+			New: func() interface{} {
+				return app.NewApp()
+			},
+		},
+	}
 }
 
 //Creating endpoints list
@@ -29,12 +37,36 @@ func (h *HttpHandler) CreateEndpoints() {
 	h.echo.POST("/capture/:captureID/recording/start", h.StartRecording)
 	h.echo.POST("/capture/:captureID/recording/stop", h.StopRecording)
 	h.echo.POST("/user/create", h.CreateUser)
+	h.echo.GET("/user", h.User)
 }
 
 //Creating system user
 func (h *HttpHandler) CreateUser(c echo.Context) error {
+	parm := c.FormValue("user")
+
+	user := &UserRequest{}
+	if err := json.Unmarshal([]byte(parm), user); err != nil {
+		return h.responseErr(c, UserResponseErr)
+	}
+
+	app := h.app()
+	if err := app.CreateUser(user.Name, user.Email, user.Password); err != nil {
+		return h.responseErr(c, NewUserErr)
+	}
 	c.NoContent(http.StatusCreated)
+
 	return nil
+}
+
+func (h *HttpHandler) User(c echo.Context) error {
+	app := h.app()
+	users, err := app.Users()
+
+	if err != nil {
+		return h.responseErr(c, ResourcesErr)
+	}
+
+	return c.JSON(http.StatusOK, users)
 }
 
 func (h *HttpHandler) StartRecording(c echo.Context) error {
@@ -45,14 +77,14 @@ func (h *HttpHandler) StartRecording(c echo.Context) error {
 		})
 	}
 
-	service, err := h.opencvService()
-	if err != nil {
+	app := h.app()
+	if app == nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{
-			"capture error": err.Error(),
+			"capture error": "bad application instance",
 		})
 	}
 
-	err = service.StartRecording(captureID)
+	err = app.OpenCVService().StartRecording(captureID)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{
 			"video record problem": err.Error(),
@@ -70,14 +102,14 @@ func (h *HttpHandler) StopRecording(c echo.Context) error {
 		})
 	}
 
-	service, err := h.opencvService()
-	if err != nil {
+	app := h.app()
+	if app == nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{
-			"capture error": err.Error(),
+			"capture error": "bad application instance",
 		})
 	}
 
-	err = service.StopRecording(captureID)
+	err = app.OpenCVService().StopRecording(captureID)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{
 			"video record problem": err.Error(),
@@ -95,17 +127,17 @@ func (h *HttpHandler) Stream(c echo.Context) error {
 		})
 	}
 
-	service, err := h.opencvService()
-	if err != nil {
+	app := h.app()
+	if app == nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{
-			"capture error": err.Error(),
+			"stream error": "bad application instance",
 		})
 	}
 
-	capture, err := service.Capture(captureID)
+	capture, err := app.OpenCVService().Capture(captureID)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{
-			"capture error": err.Error(),
+			"stream error": err.Error(),
 		})
 	}
 
@@ -115,7 +147,7 @@ func (h *HttpHandler) Stream(c echo.Context) error {
 	c.Response().WriteHeader(http.StatusOK)
 
 	for {
-		bch := service.Stream(capture)
+		bch := app.OpenCVService().Stream(capture)
 		buff := <-bch
 
 		b := bytes.NewBuffer(buff)
@@ -145,17 +177,14 @@ func (h *HttpHandler) Stream(c echo.Context) error {
 	return nil
 }
 
-//Returns capture service after mapping from ServiceInfo struct
-func (h *HttpHandler) opencvService() (*opencvservice.OpenCVService, error) {
-	service, err := easymotion.GetService("service.opencv")
-	if err != nil {
-		return nil, err
-	}
+func (h *HttpHandler) app() *app.App {
+	app := h.appPool.Get().(*app.App)
+	defer h.appPool.Put(app)
 
-	opencvSrv, ok := service.Intstance.(*opencvservice.OpenCVService)
-	if !ok {
-		return nil, errors.New("bad mapping from ServiceInfo to OpenCVService")
-	}
+	return app
+}
 
-	return opencvSrv, nil
+// Returns Error type according errors list definition
+func (h *HttpHandler) responseErr(ctx echo.Context, err Error) error {
+	return ctx.JSON(err.Code, err)
 }

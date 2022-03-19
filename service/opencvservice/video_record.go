@@ -1,4 +1,4 @@
-package capture
+package opencvservice
 
 import (
 	"io"

@@ -49,6 +49,7 @@ func RegisterService(runner ServiceRunner) error {
 	return nil
 }
 
+// Returns service type according service ID
 func GetService(id string) (*ServiceInfo, error) {
 	srvRWMutex.Lock()
 	defer srvRWMutex.Unlock()
@@ -61,11 +62,12 @@ func GetService(id string) (*ServiceInfo, error) {
 	return service, nil
 }
 
-func GetServiceID(instance interface{}) string {
+// Returns service ID according service type
+func GetServiceID(i interface{}) string {
 	srvRWMutex.Lock()
 	defer srvRWMutex.Unlock()
 
-	service, ok := instance.(ServiceInfo)
+	service, ok := i.(ServiceInfo)
 	if !ok {
 		return ""
 	}

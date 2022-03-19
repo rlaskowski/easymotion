@@ -7,13 +7,12 @@ import (
 	"time"
 
 	"github.com/rlaskowski/easymotion"
-	"github.com/rlaskowski/easymotion/capture"
 	"github.com/rlaskowski/easymotion/config"
 )
 
 type OpenCVService struct {
-	captures     map[int]*capture.Capture
-	videosRecord map[int]*capture.VideoRecord
+	captures     map[int]*Capture
+	videosRecord map[int]*VideoRecord
 }
 
 func (OpenCVService) CreateService() *easymotion.ServiceInfo {
@@ -25,8 +24,8 @@ func (OpenCVService) CreateService() *easymotion.ServiceInfo {
 
 func newCaptureService() *OpenCVService {
 	return &OpenCVService{
-		captures:     make(map[int]*capture.Capture),
-		videosRecord: make(map[int]*capture.VideoRecord),
+		captures:     make(map[int]*Capture),
+		videosRecord: make(map[int]*VideoRecord),
 	}
 }
 
@@ -34,7 +33,7 @@ func newCaptureService() *OpenCVService {
 //
 // for example create active capture list
 func (o *OpenCVService) Start() error {
-	cap, err := capture.Open(0)
+	cap, err := OpenCapture(0)
 	if err != nil {
 		return err
 	}
@@ -58,7 +57,7 @@ func (o *OpenCVService) Stop() error {
 }
 
 // Finding capture by id
-func (o *OpenCVService) Capture(id int) (*capture.Capture, error) {
+func (o *OpenCVService) Capture(id int) (*Capture, error) {
 	cap, ok := o.captures[id]
 	if !ok {
 		return nil, fmt.Errorf("could not find capture %v", id)
@@ -68,7 +67,7 @@ func (o *OpenCVService) Capture(id int) (*capture.Capture, error) {
 }
 
 // Finding Video Record by capture id
-func (o *OpenCVService) VideoRecord(id int) (*capture.VideoRecord, error) {
+func (o *OpenCVService) VideoRecord(id int) (*VideoRecord, error) {
 	vr, ok := o.videosRecord[id]
 	if !ok {
 		return nil, fmt.Errorf("could not find video record, capture %v", id)
@@ -78,7 +77,7 @@ func (o *OpenCVService) VideoRecord(id int) (*capture.VideoRecord, error) {
 }
 
 // Stream video file
-func (o *OpenCVService) Stream(capture *capture.Capture) <-chan []byte {
+func (o *OpenCVService) Stream(capture *Capture) <-chan []byte {
 	imgch := make(chan []byte, 10)
 
 	go func() {
