@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"path/filepath"
 	"time"
 
 	"github.com/rlaskowski/easymotion"
+	"github.com/rlaskowski/easymotion/cmd/easymotion/flags"
 	"github.com/rlaskowski/easymotion/config"
 )
 
@@ -106,7 +108,7 @@ func (o *OpenCVService) StartRecording(id int) error {
 	}
 
 	name := time.Now().Format("20060102_150405")
-	videoPath := fmt.Sprintf("cam%d_%s.avi", id, name)
+	videoPath := filepath.Join(flags.VideosPath, fmt.Sprintf("cam%d_%s.avi", id, name))
 
 	vf, err := cap.VideoRecord(videoPath, "h264")
 	if err != nil {

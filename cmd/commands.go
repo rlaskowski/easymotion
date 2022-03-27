@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/rlaskowski/easymotion"
+	"github.com/rlaskowski/easymotion/cmd/easymotion/flags"
 	"github.com/rlaskowski/easymotion/service/dbservice"
 	"github.com/rlaskowski/easymotion/service/httpservice"
 	"github.com/rlaskowski/easymotion/service/opencvservice"
@@ -20,7 +21,11 @@ func init() {
 func RunCommand(service *easymotion.SystemService) {
 	if len(os.Args) < 2 {
 		fmt.Println("Please select option to run, for example: install | uninstall | restart | run")
+		os.Exit(0)
 	}
+
+	//Init all flags
+	flags.InitFlags()
 
 	switch os.Args[1] {
 	case "run":

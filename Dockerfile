@@ -8,4 +8,6 @@ COPY . .
 
 RUN make build-raspi
 
-CMD ["dist/easymotion", "run"]
+VOLUME [ "/videos" ]
+
+CMD ["dist/easymotion", "run", "-f", "/videos"]
