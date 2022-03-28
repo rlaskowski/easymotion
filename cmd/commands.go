@@ -10,25 +10,28 @@ import (
 	"github.com/rlaskowski/easymotion/config"
 )
 
-var VideosPath string
+var (
+	VideoPath string
+)
 
-func flags() {
-	flag.StringVar(&VideosPath, "f", config.ProjectPath(), "Path where will be store video files")
-
+func flags() []string {
+	flag.StringVar(&VideoPath, "f", config.ProjectPath(), "Path where will be store video files")
 	flag.Parse()
 
+	return flag.Args()
 }
 
 func RunCommand(service *easymotion.SystemService) {
-	if len(os.Args) < 2 {
+
+	//Init all flags
+	args := flags()
+
+	if len(args) == 0 {
 		fmt.Println("Please select option to run, for example: install | uninstall | restart | run")
 		os.Exit(0)
 	}
 
-	//Init all flags
-	flags()
-
-	switch os.Args[1] {
+	switch args[0] {
 	case "run":
 		if err := service.RunService(); err != nil {
 			log.Println(err)

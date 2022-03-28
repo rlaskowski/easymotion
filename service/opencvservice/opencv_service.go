@@ -108,12 +108,12 @@ func (o *OpenCVService) StartRecording(id int) error {
 		return fmt.Errorf("video record is already exist, capture %v", id)
 	}
 
-	if _, err := os.Stat(cmd.VideosPath); os.IsNotExist(err) {
-		return fmt.Errorf("path: %s to store video file not exists", cmd.VideosPath)
+	if _, err := os.Stat(cmd.VideoPath); os.IsNotExist(err) {
+		return fmt.Errorf("path: %s to store video file not exists", cmd.VideoPath)
 	}
 
 	name := time.Now().Format("20060102_150405")
-	videoPath := filepath.Join(cmd.VideosPath, fmt.Sprintf("cam%d_%s.avi", id, name))
+	videoPath := filepath.Join(cmd.VideoPath, fmt.Sprintf("cam%d_%s.avi", id, name))
 
 	vf, err := cap.VideoRecord(videoPath, "h264")
 	if err != nil {
