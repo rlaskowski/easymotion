@@ -1,21 +1,22 @@
 package cmd
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"os"
 
 	"github.com/rlaskowski/easymotion"
-	"github.com/rlaskowski/easymotion/cmd/easymotion/flags"
-	"github.com/rlaskowski/easymotion/service/dbservice"
-	"github.com/rlaskowski/easymotion/service/httpservice"
-	"github.com/rlaskowski/easymotion/service/opencvservice"
+	"github.com/rlaskowski/easymotion/config"
 )
 
-func init() {
-	easymotion.RegisterService(&httpservice.HttpServer{})
-	easymotion.RegisterService(&opencvservice.OpenCVService{})
-	easymotion.RegisterService(&dbservice.ImmuDBService{})
+var VideosPath string
+
+func flags() {
+	flag.StringVar(&VideosPath, "f", config.ProjectPath(), "Path where will be store video files")
+
+	flag.Parse()
+
 }
 
 func RunCommand(service *easymotion.SystemService) {
@@ -25,7 +26,7 @@ func RunCommand(service *easymotion.SystemService) {
 	}
 
 	//Init all flags
-	flags.InitFlags()
+	flags()
 
 	switch os.Args[1] {
 	case "run":
@@ -68,5 +69,7 @@ func RunCommand(service *easymotion.SystemService) {
 		if err := service.RestartService(); err != nil {
 			log.Println(err)
 		}
+	default:
+		log.Println("Bad runtime argument")
 	}
 }

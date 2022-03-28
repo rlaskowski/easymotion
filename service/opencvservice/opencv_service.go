@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"os"
 	"path/filepath"
 	"time"
 
 	"github.com/rlaskowski/easymotion"
-	"github.com/rlaskowski/easymotion/cmd/easymotion/flags"
+	"github.com/rlaskowski/easymotion/cmd"
 	"github.com/rlaskowski/easymotion/config"
 )
 
@@ -107,8 +108,12 @@ func (o *OpenCVService) StartRecording(id int) error {
 		return fmt.Errorf("video record is already exist, capture %v", id)
 	}
 
+	if _, err := os.Stat(cmd.VideosPath); os.IsNotExist(err) {
+		return fmt.Errorf("path: %s to store video file not exists", cmd.VideosPath)
+	}
+
 	name := time.Now().Format("20060102_150405")
-	videoPath := filepath.Join(flags.VideosPath, fmt.Sprintf("cam%d_%s.avi", id, name))
+	videoPath := filepath.Join(cmd.VideosPath, fmt.Sprintf("cam%d_%s.avi", id, name))
 
 	vf, err := cap.VideoRecord(videoPath, "h264")
 	if err != nil {
