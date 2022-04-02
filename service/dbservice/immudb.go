@@ -1,9 +1,9 @@
 package dbservice
 
 import (
+	"context"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/codenotary/immudb/embedded/sql"
 	"github.com/rlaskowski/easymotion"
@@ -52,24 +52,20 @@ func (im *ImmuDB) CreateUser(user *auth.User) error {
 }
 
 func (im *ImmuDB) UserByEmail(email string) (auth.User, error) {
-	param := map[string]interface{}{
+	params := map[string]interface{}{
 		"email": email,
 	}
 
-	query, err := im.engine.Query("SELECT u.name,u.email,u.created FROM user u WHERE u.email = @email", param, nil)
+	query, err := im.Query("SELECT u.name,u.email,u.created FROM user u WHERE u.email = @email", params)
 	if err != nil {
 		return auth.User{}, err
 	}
 
 	user := auth.User{}
 
-	for {
-		row, err := query.Read()
-		if err == sql.ErrNoMoreRows {
-			break
-		}
+	for query.Next() {
 
-		if err := im.scan(row, &user.Name, &user.Email, &user.Created); err != nil {
+		if err := query.Scan(&user.Name, &user.Email, &user.Created); err != nil {
 			return auth.User{}, err
 		}
 
@@ -79,22 +75,18 @@ func (im *ImmuDB) UserByEmail(email string) (auth.User, error) {
 }
 
 func (im *ImmuDB) Users() ([]auth.User, error) {
-	query, err := im.engine.Query("SELECT u.name,u.email,u.created FROM user u", nil, nil)
+	query, err := im.Query("SELECT u.name,u.email,u.created FROM user u", nil)
 	if err != nil {
 		return nil, err
 	}
 
 	users := make([]auth.User, 0)
 
-	for {
-		row, err := query.Read()
-		if err == sql.ErrNoMoreRows {
-			break
-		}
+	for query.Next() {
 
 		user := auth.User{}
 
-		if err := im.scan(row, &user.Name, &user.Email, &user.Created); err != nil {
+		if err := query.Scan(&user.Name, &user.Email, &user.Created); err != nil {
 			return nil, err
 		}
 
@@ -104,47 +96,27 @@ func (im *ImmuDB) Users() ([]auth.User, error) {
 	return users, nil
 }
 
-func (im *ImmuDB) scan(row *sql.Row, params ...interface{}) error {
-	var cols []interface{}
-
-	for _, r := range row.Values {
-		cols = append(cols, r.Value())
-	}
-
-	if len(cols) != len(params) {
-		return fmt.Errorf("different number of columns in row, expected %d got %d", len(params), len(cols))
-	}
-
-	for i, v := range cols {
-		if err := im.parseType(params[i], v); err != nil {
-			return err
-		}
-	}
-
-	return nil
+func (im *ImmuDB) Query(sql string, params map[string]interface{}) (*ImmuDBRows, error) {
+	return im.QueryContext(context.Background(), sql, params)
 }
 
-func (im *ImmuDB) parseType(dst, src interface{}) error {
-	switch s := src.(type) {
-	case string:
-		switch d := dst.(type) {
-		case *string:
-			*d = s
-			return nil
-		}
-	case time.Time:
-		switch d := dst.(type) {
-		case *time.Time:
-			*d = s
-			return nil
-		case *string:
-			*d = s.Format(time.RFC3339Nano)
-			return nil
-		case *[]byte:
-			*d = []byte(s.Format(time.RFC3339Nano))
-			return nil
-		}
+func (im *ImmuDB) QueryContext(ctx context.Context, sql string, params map[string]interface{}) (*ImmuDBRows, error) {
+	rowr, err := im.engine.Query(sql, params, nil)
+
+	if err != nil {
+		return nil, err
 	}
 
-	return nil
+	rows := &ImmuDBRows{
+		rowr: rowr,
+	}
+
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
+	}
+
+	return rows, nil
+
 }
