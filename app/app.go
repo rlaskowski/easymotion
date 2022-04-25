@@ -87,6 +87,15 @@ func (a *App) StopRecord(id int) error {
 	return camera.StopRecord()
 }
 
+func (a *App) CreateOptions(id int, name string) error {
+	options := &dbservice.CameraOptions{
+		CameraID: id,
+		Name:     name,
+	}
+
+	return a.dbctx.CreateCamOption(options)
+}
+
 func (a *App) Users() ([]dbservice.User, error) {
 	return a.dbctx.Users()
 }

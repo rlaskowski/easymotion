@@ -1,7 +1,7 @@
 package dbservice
 
 type CameraOptions struct {
-	ID int64 `json:"-"`
+	ID int `json:"-"`
 
 	// Custom name
 	Name string `json:"name"`

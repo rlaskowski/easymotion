@@ -38,6 +38,7 @@ func (h *HttpHandler) CreateEndpoints() {
 	h.echo.POST("/capture/:cameraID/recording/stop", h.StopRecording)
 	h.echo.POST("/user/create", h.CreateUser)
 	h.echo.GET("/user", h.User)
+	h.echo.POST("/camera/options/create", h.CreateOptions)
 }
 
 //Creating system user
@@ -68,6 +69,28 @@ func (h *HttpHandler) User(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, users)
+}
+
+func (h *HttpHandler) CreateOptions(c echo.Context) error {
+	optReq := c.FormValue("option")
+
+	options := &CameraOptionsReq{}
+
+	if err := json.Unmarshal([]byte(optReq), options); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"camera option problem": err.Error(),
+		})
+	}
+
+	app := h.application()
+
+	if err := app.CreateOptions(options.CameraID, options.Name); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{
+			"camera option problem": err.Error(),
+		})
+	}
+
+	return c.NoContent(http.StatusCreated)
 }
 
 func (h *HttpHandler) StartRecording(c echo.Context) error {

@@ -150,8 +150,12 @@ func (im *ImmuDB) CameraOption(camID int) (CameraOptions, error) {
 
 	lopt := len(options)
 
-	if lopt > 1 || lopt == 0 {
+	if lopt > 0 {
 		return CameraOptions{}, errors.New("unexpected option")
+	}
+
+	if cap(options) == 0 {
+		return CameraOptions{CameraID: -1}, nil
 	}
 
 	return options[0], nil
