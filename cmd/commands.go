@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"os"
 
@@ -25,11 +24,6 @@ func RunCommand(service *easymotion.SystemService) {
 
 	//Init all flags
 	args := flags()
-
-	if len(args) == 0 {
-		fmt.Println("Please select option to run, for example: install | uninstall | restart | run")
-		os.Exit(0)
-	}
 
 	switch args[0] {
 	case "run":
@@ -73,6 +67,7 @@ func RunCommand(service *easymotion.SystemService) {
 			log.Println(err)
 		}
 	default:
-		log.Println("Bad runtime argument")
+		log.Println("Please select option to run, for example: install | uninstall | restart | run")
+		os.Exit(0)
 	}
 }

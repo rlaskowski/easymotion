@@ -2,22 +2,25 @@ package dbservice
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/codenotary/immudb/embedded/sql"
 )
 
 type ImmuDBRows struct {
-	rowr sql.RowReader
-	row  sql.Row
-	//rwmutex sync.RWMutex
+	rowr    sql.RowReader
+	row     sql.Row
+	rwmutex sync.RWMutex
 }
 
 func (i *ImmuDBRows) Next() bool {
+	i.rwmutex.Lock()
+	defer i.rwmutex.Unlock()
 
 	r, err := i.rowr.Read()
 
-	if err == sql.ErrNoMoreRows {
+	if err != nil {
 		return false
 	}
 
@@ -39,6 +42,9 @@ func (i *ImmuDBRows) Scan(params ...interface{}) error {
 	if err != nil {
 		return fmt.Errorf("bad columns definition due to: %s", err.Error())
 	}
+
+	i.rwmutex.Lock()
+	defer i.rwmutex.Unlock()
 
 	index := 0
 	for _, c := range cols {

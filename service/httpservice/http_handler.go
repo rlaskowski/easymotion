@@ -33,9 +33,9 @@ func NewHttpHandler(echo *echo.Echo) *HttpHandler {
 
 //Creating endpoints list
 func (h *HttpHandler) CreateEndpoints() {
-	h.echo.GET("/stream/:captureID", h.Stream)
-	h.echo.POST("/capture/:captureID/recording/start", h.StartRecording)
-	h.echo.POST("/capture/:captureID/recording/stop", h.StopRecording)
+	h.echo.GET("/stream/:cameraID", h.Stream)
+	h.echo.POST("/capture/:cameraID/recording/start", h.StartRecording)
+	h.echo.POST("/capture/:cameraID/recording/stop", h.StopRecording)
 	h.echo.POST("/user/create", h.CreateUser)
 	h.echo.GET("/user", h.User)
 }
@@ -49,17 +49,18 @@ func (h *HttpHandler) CreateUser(c echo.Context) error {
 		return h.responseErr(c, UserResponseErr)
 	}
 
-	app := h.app()
+	app := h.application()
+
 	if err := app.CreateUser(user.Name, user.Email, user.Password); err != nil {
 		return h.responseErr(c, NewUserErr)
 	}
-	c.NoContent(http.StatusCreated)
 
-	return nil
+	return c.NoContent(http.StatusCreated)
 }
 
 func (h *HttpHandler) User(c echo.Context) error {
-	app := h.app()
+	app := h.application()
+
 	users, err := app.Users()
 
 	if err != nil {
@@ -70,22 +71,16 @@ func (h *HttpHandler) User(c echo.Context) error {
 }
 
 func (h *HttpHandler) StartRecording(c echo.Context) error {
-	captureID, err := strconv.Atoi(c.Param("captureID"))
+	cameraID, err := strconv.Atoi(c.Param("cameraID"))
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{
-			"capture ID problem": err.Error(),
+			"camera problem": err.Error(),
 		})
 	}
 
-	app := h.app()
-	if app == nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{
-			"capture error": "bad application instance",
-		})
-	}
+	app := h.application()
 
-	err = app.OpenCVService().StartRecording(captureID)
-	if err != nil {
+	if app.StartRecord(cameraID); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{
 			"video record problem": err.Error(),
 		})
@@ -95,22 +90,16 @@ func (h *HttpHandler) StartRecording(c echo.Context) error {
 }
 
 func (h *HttpHandler) StopRecording(c echo.Context) error {
-	captureID, err := strconv.Atoi(c.Param("captureID"))
+	cameraID, err := strconv.Atoi(c.Param("cameraID"))
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{
-			"capture ID problem": err.Error(),
+			"camera problem": err.Error(),
 		})
 	}
 
-	app := h.app()
-	if app == nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{
-			"capture error": "bad application instance",
-		})
-	}
+	app := h.application()
 
-	err = app.OpenCVService().StopRecording(captureID)
-	if err != nil {
+	if err := app.StopRecord(cameraID); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{
 			"video record problem": err.Error(),
 		})
@@ -120,26 +109,14 @@ func (h *HttpHandler) StopRecording(c echo.Context) error {
 }
 
 func (h *HttpHandler) Stream(c echo.Context) error {
-	captureID, err := strconv.Atoi(c.Param("captureID"))
+	cameraID, err := strconv.Atoi(c.Param("cameraID"))
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{
-			"capture ID problem": err.Error(),
+			"camera problem": err.Error(),
 		})
 	}
 
-	app := h.app()
-	if app == nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{
-			"stream error": "bad application instance",
-		})
-	}
-
-	capture, err := app.OpenCVService().Capture(captureID)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{
-			"stream error": err.Error(),
-		})
-	}
+	app := h.application()
 
 	boundary := "STREAMCAMERA"
 
@@ -147,10 +124,14 @@ func (h *HttpHandler) Stream(c echo.Context) error {
 	c.Response().WriteHeader(http.StatusOK)
 
 	for {
-		bch := app.OpenCVService().Stream(capture)
-		buff := <-bch
+		r, err := app.ReadBytes(cameraID)
+		if err != nil {
+			return c.JSON(http.StatusBadRequest, map[string]string{
+				"camera read problem": err.Error(),
+			})
+		}
 
-		b := bytes.NewBuffer(buff)
+		buff := bytes.NewBuffer(r)
 
 		mw := multipart.NewWriter(c.Response())
 		header := make(textproto.MIMEHeader)
@@ -158,14 +139,14 @@ func (h *HttpHandler) Stream(c echo.Context) error {
 		mw.SetBoundary(boundary)
 
 		header.Set("Content-Type", "image/jpeg")
-		header.Set("Content-Length", fmt.Sprintf("%d", b.Len()))
+		header.Set("Content-Length", fmt.Sprintf("%d", buff.Len()))
 
 		w, err := mw.CreatePart(header)
 		if err != nil {
 			break
 		}
 
-		_, err = io.Copy(w, b)
+		_, err = io.Copy(w, buff)
 		if err != nil {
 			break
 		}
@@ -177,7 +158,7 @@ func (h *HttpHandler) Stream(c echo.Context) error {
 	return nil
 }
 
-func (h *HttpHandler) app() *app.App {
+func (h *HttpHandler) application() *app.App {
 	app := h.appPool.Get().(*app.App)
 	defer h.appPool.Put(app)
 
