@@ -34,8 +34,8 @@ func NewHttpHandler(echo *echo.Echo) *HttpHandler {
 //Creating endpoints list
 func (h *HttpHandler) CreateEndpoints() {
 	h.echo.GET("/stream/:cameraID", h.Stream)
-	h.echo.POST("/capture/:cameraID/recording/start", h.StartRecording)
-	h.echo.POST("/capture/:cameraID/recording/stop", h.StopRecording)
+	h.echo.POST("/camera/:cameraID/recording/start", h.StartRecording)
+	h.echo.POST("/camera/:cameraID/recording/stop", h.StopRecording)
 	h.echo.POST("/user/create", h.CreateUser)
 	h.echo.GET("/user", h.User)
 	h.echo.POST("/camera/options/create", h.CreateOptions)
@@ -147,11 +147,9 @@ func (h *HttpHandler) Stream(c echo.Context) error {
 	c.Response().WriteHeader(http.StatusOK)
 
 	for {
-		r, err := app.ReadBytes(cameraID)
+		r, _ := app.ReadBytes(cameraID)
 		if err != nil {
-			return c.JSON(http.StatusBadRequest, map[string]string{
-				"camera read problem": err.Error(),
-			})
+			continue
 		}
 
 		buff := bytes.NewBuffer(r)

@@ -17,11 +17,11 @@ import (
 )
 
 type Camera struct {
-	id       int
-	campture *gocv.VideoCapture
-	mat      gocv.Mat
-	mu       sync.Mutex
-	options  CameraOptions
+	id      int
+	capture *gocv.VideoCapture
+	mat     gocv.Mat
+	rwmu    sync.RWMutex
+	options CameraOptions
 }
 
 func OpenCamera(id int, options CameraOptions) (*Camera, error) {
@@ -31,22 +31,22 @@ func OpenCamera(id int, options CameraOptions) (*Camera, error) {
 	}
 
 	camera := &Camera{
-		id:       id,
-		campture: capture,
-		mat:      gocv.NewMat(),
-		options:  options,
+		id:      id,
+		capture: capture,
+		mat:     gocv.NewMat(),
+		options: options,
 	}
 
 	return camera, nil
 }
 
 func (c *Camera) IsOpened() bool {
-	return c.campture.IsOpened()
+	return c.capture.IsOpened()
 }
 
 func (c *Camera) Close() error {
 	if c.IsOpened() {
-		return c.campture.Close()
+		return c.capture.Close()
 	}
 	return nil
 }
@@ -57,15 +57,17 @@ func (c *Camera) ID() int {
 }
 
 func (c *Camera) VideoRecord(name, codec string) (*VideoRecord, error) {
-	if err := c.readMat(); err != nil {
+	mat, err := c.readMat()
+
+	if err != nil {
 		return nil, err
 	}
 
-	if c.mat.Empty() {
+	if mat.Empty() {
 		return nil, errors.New("to write a video file empty mat is not acceptable")
 	}
 
-	writer, err := gocv.VideoWriterFile(name, codec, 30, c.mat.Cols(), c.mat.Rows(), true)
+	writer, err := gocv.VideoWriterFile(name, codec, 30, mat.Cols(), mat.Rows(), true)
 	if err != nil {
 		return nil, err
 	}
@@ -78,22 +80,22 @@ func (c *Camera) VideoRecord(name, codec string) (*VideoRecord, error) {
 	return v, nil
 }
 
-func (c *Camera) readMat() error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+func (c *Camera) readMat() (gocv.Mat, error) {
+	c.rwmu.Lock()
+	defer c.rwmu.Unlock()
 
-	if ok := c.campture.Read(&c.mat); !ok {
-		return errors.New("unexpected error to read mat")
+	if ok := c.capture.Read(&c.mat); !ok {
+		return gocv.Mat{}, errors.New("unexpected error to read mat")
 	}
 
 	c.showDatetime()
 
-	return nil
+	return c.mat, nil
 }
 
 // Reading current Mat value
 func (c *Camera) Read(b []byte) (n int, err error) {
-	err = c.readMat()
+	mat, err := c.readMat()
 
 	if err != nil {
 		return 0, err
@@ -103,7 +105,7 @@ func (c *Camera) Read(b []byte) (n int, err error) {
 		return 0, nil
 	}
 
-	buff, err := gocv.IMEncode(".jpg", c.mat)
+	buff, err := gocv.IMEncode(".jpg", mat)
 	if err != nil {
 		return 0, err
 	}
@@ -120,7 +122,7 @@ func (c *Camera) StartRecord() error {
 		return fmt.Errorf("path: %s to store video file not exists", cmd.VideoPath)
 	}
 
-	name := time.Now().Format("20060102_150405")
+	name := fmt.Sprintf("%s.avi", time.Now().Format("20060102_150405"))
 	videoPath := filepath.Join(cmd.VideoPath, fmt.Sprintf("cam%d", c.id), name)
 
 	vr, err := c.VideoRecord(videoPath, "h264")
@@ -148,7 +150,8 @@ func (c *Camera) StartRecord() error {
 			break
 		}
 
-		if err := c.readMat(); err != nil {
+		mat, err := c.readMat()
+		if err != nil {
 			if err := c.StopRecord(); err != nil {
 				return err
 			}
@@ -156,7 +159,7 @@ func (c *Camera) StartRecord() error {
 			return err
 		}
 
-		err := vr.Write(c.mat)
+		err = vr.Write(mat)
 
 		if err != nil {
 			if err == io.EOF {

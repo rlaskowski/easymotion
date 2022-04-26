@@ -1,13 +1,14 @@
 package opencvservice
 
 import (
+	"errors"
 	"sync"
 
 	"github.com/rlaskowski/easymotion"
 )
 
 type OpenCVService struct {
-	rmu     *sync.RWMutex
+	rwmu    sync.RWMutex
 	cameras map[int]*Camera
 }
 
@@ -20,7 +21,6 @@ func (OpenCVService) CreateService() *easymotion.ServiceInfo {
 
 func newCaptureService() *OpenCVService {
 	return &OpenCVService{
-		rmu:     &sync.RWMutex{},
 		cameras: make(map[int]*Camera),
 	}
 }
@@ -40,26 +40,36 @@ func (o *OpenCVService) Start() error {
 // Stopping all active processes
 func (o *OpenCVService) Stop() error {
 	for _, camera := range o.cameras {
-		o.rmu.RLock()
+		o.rwmu.Lock()
 
 		if err := camera.Close(); err != nil {
 			return err
 		}
 
-		o.rmu.RUnlock()
+		o.rwmu.Unlock()
 	}
 
 	return nil
 }
 
-// Finding or creating camera instance
-func (o *OpenCVService) GetOrCreate(id int, options CameraOptions) (*Camera, error) {
-	o.rmu.RLock()
-	defer o.rmu.RUnlock()
+// Finding camera instance in service list
+func (o *OpenCVService) Camera(id int) (*Camera, error) {
+	o.rwmu.RLock()
+	defer o.rwmu.RUnlock()
 
-	if cam, ok := o.cameras[id]; ok {
-		return cam, nil
+	camera, ok := o.cameras[id]
+
+	if !ok {
+		return nil, errors.New("camera instance not found")
 	}
+
+	return camera, nil
+}
+
+// Creating new camera instance
+func (o *OpenCVService) CreateCamera(id int, options CameraOptions) (*Camera, error) {
+	o.rwmu.Lock()
+	defer o.rwmu.Unlock()
 
 	cam, err := OpenCamera(id, options)
 

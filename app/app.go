@@ -1,10 +1,8 @@
 package app
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
-	"io"
 
 	"github.com/rlaskowski/easymotion"
 	"github.com/rlaskowski/easymotion/service/dbservice"
@@ -31,6 +29,12 @@ func NewApp() *App {
 }
 
 func (a *App) camera(id int) (*opencvservice.Camera, error) {
+	camera, err := a.opencvService.Camera(id)
+
+	if err == nil {
+		return camera, nil
+	}
+
 	options, err := a.dbctx.CameraOption(id)
 
 	if err != nil {
@@ -42,7 +46,7 @@ func (a *App) camera(id int) (*opencvservice.Camera, error) {
 		Timeline: options.Timeline,
 	}
 
-	camera, err := a.opencvService.GetOrCreate(id, opt)
+	camera, err = a.opencvService.CreateCamera(id, opt)
 
 	if err != nil {
 		return nil, fmt.Errorf("camera %d not found", id)
@@ -58,13 +62,15 @@ func (a *App) ReadBytes(id int) ([]byte, error) {
 		return nil, err
 	}
 
-	buff := bytes.Buffer{}
+	buff := make([]byte, 1024*1024)
 
-	if _, err := io.Copy(&buff, camera); err != nil {
+	_, err = camera.Read(buff)
+
+	if err != nil {
 		return nil, errors.New("nothing to read")
 	}
 
-	return buff.Bytes(), nil
+	return buff, nil
 }
 
 func (a *App) StartRecord(id int) error {
@@ -74,7 +80,7 @@ func (a *App) StartRecord(id int) error {
 		return err
 	}
 
-	return camera.StopRecord()
+	return camera.StartRecord()
 }
 
 func (a *App) StopRecord(id int) error {
@@ -91,6 +97,7 @@ func (a *App) CreateOptions(id int, name string) error {
 	options := &dbservice.CameraOptions{
 		CameraID: id,
 		Name:     name,
+		Timeline: true,
 	}
 
 	return a.dbctx.CreateCamOption(options)
