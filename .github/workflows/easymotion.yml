@@ -38,7 +38,7 @@ jobs:
           docker rm easymotion
 
       - name: Run Container
-        run: docker run --name easymotion -d -p 9090:9090 --device=/dev/video0:/dev/video0 rlaskowski/easymotion
+        run: docker run --name easymotion -d -p 9090:9090 -v /home/pi/videos:/videos  --device=/dev/video0:/dev/video0 rlaskowski/easymotion
 
 
       
