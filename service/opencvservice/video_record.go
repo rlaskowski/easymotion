@@ -1,4 +1,4 @@
-package capture
+package opencvservice
 
 import (
 	"io"
@@ -7,15 +7,16 @@ import (
 	"gocv.io/x/gocv"
 )
 
+var (
+	actualRec = make(map[int]*VideoRecord)
+)
+
 type VideoRecord struct {
 	name        string
 	videoWriter *gocv.VideoWriter
-	capture     *Capture
 }
 
-func (v *VideoRecord) Write() error {
-	mat := <-v.capture.readMat()
-
+func (v *VideoRecord) Write(mat gocv.Mat) error {
 	if mat.Empty() {
 		return nil
 	}

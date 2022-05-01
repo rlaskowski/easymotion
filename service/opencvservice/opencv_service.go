@@ -1,19 +1,15 @@
 package opencvservice
 
 import (
-	"fmt"
-	"io"
-	"log"
-	"time"
+	"errors"
+	"sync"
 
 	"github.com/rlaskowski/easymotion"
-	"github.com/rlaskowski/easymotion/capture"
-	"github.com/rlaskowski/easymotion/config"
 )
 
 type OpenCVService struct {
-	captures     map[int]*capture.Capture
-	videosRecord map[int]*capture.VideoRecord
+	rwmu    sync.RWMutex
+	cameras map[int]*Camera
 }
 
 func (OpenCVService) CreateService() *easymotion.ServiceInfo {
@@ -25,137 +21,63 @@ func (OpenCVService) CreateService() *easymotion.ServiceInfo {
 
 func newCaptureService() *OpenCVService {
 	return &OpenCVService{
-		captures:     make(map[int]*capture.Capture),
-		videosRecord: make(map[int]*capture.VideoRecord),
+		cameras: make(map[int]*Camera),
 	}
 }
 
 // Starting all process
-//
-// for example create active capture list
 func (o *OpenCVService) Start() error {
-	cap, err := capture.Open(0)
+	/* cam, err := OpenCamera(0)
 	if err != nil {
 		return err
 	}
 
-	o.captures[0] = cap
+	o.cameras[0] = cam */
 
 	return nil
 }
 
 // Stopping all active processes
 func (o *OpenCVService) Stop() error {
-	if err := o.StopRecording(0); err != nil {
-		return err
-	}
+	for _, camera := range o.cameras {
+		o.rwmu.Lock()
 
-	if cap, ok := o.captures[0]; ok {
-		return cap.Close()
-	}
-
-	return nil
-}
-
-// Finding capture by id
-func (o *OpenCVService) Capture(id int) (*capture.Capture, error) {
-	cap, ok := o.captures[id]
-	if !ok {
-		return nil, fmt.Errorf("could not find capture %v", id)
-	}
-
-	return cap, nil
-}
-
-// Finding Video Record by capture id
-func (o *OpenCVService) VideoRecord(id int) (*capture.VideoRecord, error) {
-	vr, ok := o.videosRecord[id]
-	if !ok {
-		return nil, fmt.Errorf("could not find video record, capture %v", id)
-	}
-
-	return vr, nil
-}
-
-// Stream video file
-func (o *OpenCVService) Stream(capture *capture.Capture) <-chan []byte {
-	imgch := make(chan []byte, 10)
-
-	go func() {
-		buff := make([]byte, 1024*1024)
-
-		_, err := capture.Read(buff)
-		if err != nil {
-			imgch <- nil
+		if err := camera.Close(); err != nil {
+			return err
 		}
 
-		imgch <- buff
-	}()
-
-	return imgch
-}
-
-// Starting recording by capture id
-func (o *OpenCVService) StartRecording(id int) error {
-	cap, err := o.Capture(id)
-	if err != nil {
-		return err
+		o.rwmu.Unlock()
 	}
-
-	if _, err := o.VideoRecord(id); err == nil {
-		return fmt.Errorf("video record is already exist, capture %v", id)
-	}
-
-	name := time.Now().Format("20060102_150405")
-	videoPath := fmt.Sprintf("cam%d_%s.avi", id, name)
-
-	vf, err := cap.VideoRecord(videoPath, "h264")
-	if err != nil {
-		return err
-	}
-
-	o.videosRecord[id] = vf
-
-	go func() {
-		for {
-			if vf.Size() >= config.ToBytes(10) {
-				if err := o.StopRecording(id); err != nil {
-					log.Println(err)
-					break
-				}
-
-				if err := o.StartRecording(id); err != nil {
-					log.Println(err)
-				}
-				break
-			}
-
-			err := vf.Write()
-
-			if err != nil {
-				if err == io.EOF {
-					break
-				}
-				log.Println(err)
-			}
-		}
-	}()
 
 	return nil
 }
 
-// Stopping recording by capture id
-func (o *OpenCVService) StopRecording(id int) error {
-	vr, err := o.VideoRecord(id)
+// Finding camera instance in service list
+func (o *OpenCVService) Camera(id int) (*Camera, error) {
+	o.rwmu.RLock()
+	defer o.rwmu.RUnlock()
+
+	camera, ok := o.cameras[id]
+
+	if !ok {
+		return nil, errors.New("camera instance not found")
+	}
+
+	return camera, nil
+}
+
+// Creating new camera instance
+func (o *OpenCVService) CreateCamera(id int, options CameraOptions) (*Camera, error) {
+	o.rwmu.Lock()
+	defer o.rwmu.Unlock()
+
+	cam, err := OpenCamera(id, options)
+
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	if err := vr.Close(); err != nil {
-		return err
-	}
+	o.cameras[id] = cam
 
-	delete(o.videosRecord, id)
-
-	return nil
+	return cam, nil
 }
