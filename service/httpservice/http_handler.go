@@ -103,7 +103,7 @@ func (h *HttpHandler) StartRecording(c echo.Context) error {
 
 	app := h.application()
 
-	if app.StartRecord(cameraID); err != nil {
+	if err := app.StartRecord(cameraID); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{
 			"video record problem": err.Error(),
 		})
