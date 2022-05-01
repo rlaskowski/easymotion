@@ -3,12 +3,14 @@ package opencvservice
 import (
 	"io"
 	"os"
+	"sync"
 
 	"gocv.io/x/gocv"
 )
 
 var (
 	actualRec = make(map[int]*VideoRecord)
+	recmux    = sync.RWMutex{}
 )
 
 type VideoRecord struct {

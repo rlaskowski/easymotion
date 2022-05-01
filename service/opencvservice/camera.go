@@ -6,6 +6,7 @@ import (
 	"image"
 	"image/color"
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"sync"
@@ -118,62 +119,85 @@ func (c *Camera) Read(b []byte) (n int, err error) {
 
 // Starting recording to file system
 func (c *Camera) StartRecord() error {
-	if _, err := os.Stat(cmd.VideoPath); os.IsNotExist(err) {
-		return fmt.Errorf("path: %s to store video file not exists", cmd.VideoPath)
+	recmux.RLock()
+
+	_, ok := actualRec[c.id]
+
+	recmux.RUnlock()
+
+	if ok {
+		return fmt.Errorf("camera %d is still recording", c.id)
+	}
+
+	videoPath := filepath.Join(cmd.VideoPath, fmt.Sprintf("cam%d", c.id))
+
+	if _, err := os.Stat(videoPath); os.IsNotExist(err) {
+		if err := os.MkdirAll(videoPath, 0777); err != nil {
+			return fmt.Errorf("path: %s to store video file not exists", videoPath)
+		}
 	}
 
 	name := fmt.Sprintf("%s.avi", time.Now().Format("20060102_150405"))
-	videoPath := filepath.Join(cmd.VideoPath, fmt.Sprintf("cam%d", c.id), name)
+	videoPath = filepath.Join(videoPath, name)
 
 	vr, err := c.VideoRecord(videoPath, "h264")
 	if err != nil {
 		return err
 	}
 
-	rec, ok := actualRec[c.id]
+	recmux.Lock()
 
-	if ok {
-		return fmt.Errorf("camera %d is still recording", c.id)
-	}
+	actualRec[c.id] = vr
 
-	actualRec[c.id] = rec
+	recmux.Unlock()
 
-	for {
-		if vr.Size() >= config.ToBytes(10) {
-			if err := c.StopRecord(); err != nil {
-				return err
-			}
+	go func() {
+		for vr.IsOpened() {
+			if vr.Size() >= config.ToBytes(10) {
+				if err := c.StopRecord(); err != nil {
+					log.Println(err.Error())
+					return
+				}
 
-			if err := c.StartRecord(); err != nil {
-				return err
-			}
-			break
-		}
-
-		mat, err := c.readMat()
-		if err != nil {
-			if err := c.StopRecord(); err != nil {
-				return err
-			}
-
-			return err
-		}
-
-		err = vr.Write(mat)
-
-		if err != nil {
-			if err == io.EOF {
+				if err := c.StartRecord(); err != nil {
+					log.Println(err.Error())
+					return
+				}
 				break
 			}
-			return err
+
+			mat, err := c.readMat()
+			if err != nil {
+				if err := c.StopRecord(); err != nil {
+					log.Println(err.Error())
+					return
+				}
+
+				log.Println(err.Error())
+				return
+			}
+
+			err = vr.Write(mat)
+
+			if err != nil {
+				if err == io.EOF {
+					break
+				}
+				log.Println(err.Error())
+				return
+			}
 		}
-	}
+
+	}()
 
 	return nil
 }
 
 // Stopping recording to file system
 func (c *Camera) StopRecord() error {
+	recmux.Lock()
+	defer recmux.Unlock()
+
 	rec, ok := actualRec[c.id]
 
 	if !ok {
