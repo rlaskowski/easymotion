@@ -119,13 +119,12 @@ func (c *Camera) Read(b []byte) (n int, err error) {
 
 // Starting recording to file system
 func (c *Camera) StartRecord() error {
-	recmux.RLock()
+	recmux.Lock()
 
 	_, ok := actualRec[c.id]
 
-	recmux.RUnlock()
-
 	if ok {
+		recmux.Unlock()
 		return fmt.Errorf("camera %d is still recording", c.id)
 	}
 
@@ -133,6 +132,7 @@ func (c *Camera) StartRecord() error {
 
 	if _, err := os.Stat(videoPath); os.IsNotExist(err) {
 		if err := os.MkdirAll(videoPath, 0777); err != nil {
+			recmux.Unlock()
 			return fmt.Errorf("path: %s to store video file not exists", videoPath)
 		}
 	}
@@ -142,10 +142,9 @@ func (c *Camera) StartRecord() error {
 
 	vr, err := c.VideoRecord(videoPath, "h264")
 	if err != nil {
+		recmux.Unlock()
 		return err
 	}
-
-	recmux.Lock()
 
 	actualRec[c.id] = vr
 

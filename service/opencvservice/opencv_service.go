@@ -8,7 +8,7 @@ import (
 )
 
 type OpenCVService struct {
-	rwmu    sync.RWMutex
+	rwmu    *sync.RWMutex
 	cameras map[int]*Camera
 }
 
