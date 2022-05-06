@@ -21,6 +21,7 @@ func (OpenCVService) CreateService() *easymotion.ServiceInfo {
 
 func newCaptureService() *OpenCVService {
 	return &OpenCVService{
+		rwmu:    &sync.RWMutex{},
 		cameras: make(map[int]*Camera),
 	}
 }
