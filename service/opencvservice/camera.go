@@ -23,6 +23,7 @@ type Camera struct {
 	mat     gocv.Mat
 	rwmu    sync.RWMutex
 	options CameraOptions
+	vrec    *VideoRecord
 }
 
 func OpenCamera(id int, options CameraOptions) (*Camera, error) {
@@ -121,9 +122,7 @@ func (c *Camera) Read(b []byte) (n int, err error) {
 func (c *Camera) StartRecord() error {
 	recmux.Lock()
 
-	_, ok := actualRec[c.id]
-
-	if ok {
+	if c.vrec != nil {
 		recmux.Unlock()
 		return fmt.Errorf("camera %d is still recording", c.id)
 	}
@@ -146,7 +145,7 @@ func (c *Camera) StartRecord() error {
 		return err
 	}
 
-	actualRec[c.id] = vr
+	c.vrec = vr
 
 	recmux.Unlock()
 
@@ -167,13 +166,7 @@ func (c *Camera) StartRecord() error {
 
 			mat, err := c.readMat()
 			if err != nil {
-				if err := c.StopRecord(); err != nil {
-					log.Println(err.Error())
-					return
-				}
-
-				log.Println(err.Error())
-				return
+				continue
 			}
 
 			err = vr.Write(mat)
@@ -197,17 +190,15 @@ func (c *Camera) StopRecord() error {
 	recmux.Lock()
 	defer recmux.Unlock()
 
-	rec, ok := actualRec[c.id]
-
-	if !ok {
+	if c.vrec == nil {
 		return fmt.Errorf("camera %d nothing recording yet", c.id)
 	}
 
-	if err := rec.Close(); err != nil {
+	if err := c.vrec.Close(); err != nil {
 		return err
 	}
 
-	delete(actualRec, c.id)
+	c.vrec = nil
 
 	return nil
 }

@@ -9,8 +9,7 @@ import (
 )
 
 var (
-	actualRec = make(map[int]*VideoRecord)
-	recmux    = sync.RWMutex{}
+	recmux sync.RWMutex
 )
 
 type VideoRecord struct {
