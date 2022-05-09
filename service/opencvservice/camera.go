@@ -59,17 +59,14 @@ func (c *Camera) ID() int {
 }
 
 func (c *Camera) VideoRecord(name, codec string) (*VideoRecord, error) {
-	mat, err := c.readMat()
+	c.rwmu.RLock()
+	defer c.rwmu.RUnlock()
 
-	if err != nil {
-		return nil, err
-	}
-
-	if mat.Empty() {
+	if c.mat.Empty() {
 		return nil, errors.New("to write a video file empty mat is not acceptable")
 	}
 
-	writer, err := gocv.VideoWriterFile(name, codec, 30, mat.Cols(), mat.Rows(), true)
+	writer, err := gocv.VideoWriterFile(name, codec, 30, c.mat.Cols(), c.mat.Rows(), true)
 	if err != nil {
 		return nil, err
 	}
@@ -82,32 +79,26 @@ func (c *Camera) VideoRecord(name, codec string) (*VideoRecord, error) {
 	return v, nil
 }
 
-func (c *Camera) readMat() (gocv.Mat, error) {
-	c.rwmu.Lock()
-	defer c.rwmu.Unlock()
+func (c *Camera) ReadMat() {
+	for {
+		c.rwmu.Lock()
 
-	if ok := c.capture.Read(&c.mat); !ok {
-		return gocv.Mat{}, errors.New("unexpected error to read mat")
+		c.capture.Read(&c.mat)
+
+		c.rwmu.Unlock()
 	}
-
-	c.showDatetime()
-
-	return c.mat, nil
 }
 
 // Reading current Mat value
 func (c *Camera) Read(b []byte) (n int, err error) {
-	mat, err := c.readMat()
-
-	if err != nil {
-		return 0, err
-	}
+	c.rwmu.RLock()
+	defer c.rwmu.RUnlock()
 
 	if c.mat.Empty() {
 		return 0, nil
 	}
 
-	buff, err := gocv.IMEncode(".jpg", mat)
+	buff, err := gocv.IMEncode(".jpg", c.mat)
 	if err != nil {
 		return 0, err
 	}
@@ -164,12 +155,16 @@ func (c *Camera) StartRecord() error {
 				break
 			}
 
-			mat, err := c.readMat()
-			if err != nil {
+			c.rwmu.RLock()
+
+			if c.mat.Empty() {
+				c.rwmu.RUnlock()
 				continue
 			}
 
-			err = vr.Write(mat)
+			err = vr.Write(c.mat)
+
+			c.rwmu.RUnlock()
 
 			if err != nil {
 				if err == io.EOF {

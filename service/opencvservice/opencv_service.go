@@ -28,13 +28,6 @@ func newCaptureService() *OpenCVService {
 
 // Starting all process
 func (o *OpenCVService) Start() error {
-	/* cam, err := OpenCamera(0)
-	if err != nil {
-		return err
-	}
-
-	o.cameras[0] = cam */
-
 	return nil
 }
 
@@ -44,6 +37,7 @@ func (o *OpenCVService) Stop() error {
 		o.cammu.Lock()
 
 		if err := camera.Close(); err != nil {
+			o.cammu.Unlock()
 			return err
 		}
 
@@ -77,6 +71,8 @@ func (o *OpenCVService) CreateCamera(id int, options CameraOptions) (*Camera, er
 	if err != nil {
 		return nil, err
 	}
+
+	go cam.ReadMat()
 
 	o.cameras[id] = cam
 
