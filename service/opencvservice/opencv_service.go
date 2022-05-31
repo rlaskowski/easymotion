@@ -8,7 +8,7 @@ import (
 )
 
 type OpenCVService struct {
-	rwmu    sync.RWMutex
+	cammu   *sync.RWMutex
 	cameras map[int]*Camera
 }
 
@@ -21,32 +21,27 @@ func (OpenCVService) CreateService() *easymotion.ServiceInfo {
 
 func newCaptureService() *OpenCVService {
 	return &OpenCVService{
+		cammu:   &sync.RWMutex{},
 		cameras: make(map[int]*Camera),
 	}
 }
 
 // Starting all process
 func (o *OpenCVService) Start() error {
-	/* cam, err := OpenCamera(0)
-	if err != nil {
-		return err
-	}
-
-	o.cameras[0] = cam */
-
 	return nil
 }
 
 // Stopping all active processes
 func (o *OpenCVService) Stop() error {
 	for _, camera := range o.cameras {
-		o.rwmu.Lock()
+		o.cammu.Lock()
 
 		if err := camera.Close(); err != nil {
+			o.cammu.Unlock()
 			return err
 		}
 
-		o.rwmu.Unlock()
+		o.cammu.Unlock()
 	}
 
 	return nil
@@ -54,8 +49,8 @@ func (o *OpenCVService) Stop() error {
 
 // Finding camera instance in service list
 func (o *OpenCVService) Camera(id int) (*Camera, error) {
-	o.rwmu.RLock()
-	defer o.rwmu.RUnlock()
+	o.cammu.RLock()
+	defer o.cammu.RUnlock()
 
 	camera, ok := o.cameras[id]
 
@@ -68,14 +63,16 @@ func (o *OpenCVService) Camera(id int) (*Camera, error) {
 
 // Creating new camera instance
 func (o *OpenCVService) CreateCamera(id int, options CameraOptions) (*Camera, error) {
-	o.rwmu.Lock()
-	defer o.rwmu.Unlock()
+	o.cammu.Lock()
+	defer o.cammu.Unlock()
 
 	cam, err := OpenCamera(id, options)
 
 	if err != nil {
 		return nil, err
 	}
+
+	go cam.ReadMat()
 
 	o.cameras[id] = cam
 

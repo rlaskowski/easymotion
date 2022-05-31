@@ -23,6 +23,7 @@ type Camera struct {
 	mat     gocv.Mat
 	rwmu    sync.RWMutex
 	options CameraOptions
+	vrec    *VideoRecord
 }
 
 func OpenCamera(id int, options CameraOptions) (*Camera, error) {
@@ -58,17 +59,14 @@ func (c *Camera) ID() int {
 }
 
 func (c *Camera) VideoRecord(name, codec string) (*VideoRecord, error) {
-	mat, err := c.readMat()
+	c.rwmu.RLock()
+	defer c.rwmu.RUnlock()
 
-	if err != nil {
-		return nil, err
-	}
-
-	if mat.Empty() {
+	if c.mat.Empty() {
 		return nil, errors.New("to write a video file empty mat is not acceptable")
 	}
 
-	writer, err := gocv.VideoWriterFile(name, codec, 30, mat.Cols(), mat.Rows(), true)
+	writer, err := gocv.VideoWriterFile(name, codec, 30, c.mat.Cols(), c.mat.Rows(), true)
 	if err != nil {
 		return nil, err
 	}
@@ -81,32 +79,26 @@ func (c *Camera) VideoRecord(name, codec string) (*VideoRecord, error) {
 	return v, nil
 }
 
-func (c *Camera) readMat() (gocv.Mat, error) {
-	c.rwmu.Lock()
-	defer c.rwmu.Unlock()
+func (c *Camera) ReadMat() {
+	for {
+		c.rwmu.Lock()
 
-	if ok := c.capture.Read(&c.mat); !ok {
-		return gocv.Mat{}, errors.New("unexpected error to read mat")
+		c.capture.Read(&c.mat)
+
+		c.rwmu.Unlock()
 	}
-
-	c.showDatetime()
-
-	return c.mat, nil
 }
 
 // Reading current Mat value
 func (c *Camera) Read(b []byte) (n int, err error) {
-	mat, err := c.readMat()
-
-	if err != nil {
-		return 0, err
-	}
+	c.rwmu.RLock()
+	defer c.rwmu.RUnlock()
 
 	if c.mat.Empty() {
 		return 0, nil
 	}
 
-	buff, err := gocv.IMEncode(".jpg", mat)
+	buff, err := gocv.IMEncode(".jpg", c.mat)
 	if err != nil {
 		return 0, err
 	}
@@ -119,13 +111,10 @@ func (c *Camera) Read(b []byte) (n int, err error) {
 
 // Starting recording to file system
 func (c *Camera) StartRecord() error {
-	recmux.RLock()
+	recmux.Lock()
 
-	_, ok := actualRec[c.id]
-
-	recmux.RUnlock()
-
-	if ok {
+	if c.vrec != nil {
+		recmux.Unlock()
 		return fmt.Errorf("camera %d is still recording", c.id)
 	}
 
@@ -133,6 +122,7 @@ func (c *Camera) StartRecord() error {
 
 	if _, err := os.Stat(videoPath); os.IsNotExist(err) {
 		if err := os.MkdirAll(videoPath, 0777); err != nil {
+			recmux.Unlock()
 			return fmt.Errorf("path: %s to store video file not exists", videoPath)
 		}
 	}
@@ -142,12 +132,11 @@ func (c *Camera) StartRecord() error {
 
 	vr, err := c.VideoRecord(videoPath, "h264")
 	if err != nil {
+		recmux.Unlock()
 		return err
 	}
 
-	recmux.Lock()
-
-	actualRec[c.id] = vr
+	c.vrec = vr
 
 	recmux.Unlock()
 
@@ -166,18 +155,16 @@ func (c *Camera) StartRecord() error {
 				break
 			}
 
-			mat, err := c.readMat()
-			if err != nil {
-				if err := c.StopRecord(); err != nil {
-					log.Println(err.Error())
-					return
-				}
+			c.rwmu.RLock()
 
-				log.Println(err.Error())
-				return
+			if c.mat.Empty() {
+				c.rwmu.RUnlock()
+				continue
 			}
 
-			err = vr.Write(mat)
+			err = vr.Write(c.mat)
+
+			c.rwmu.RUnlock()
 
 			if err != nil {
 				if err == io.EOF {
@@ -198,17 +185,15 @@ func (c *Camera) StopRecord() error {
 	recmux.Lock()
 	defer recmux.Unlock()
 
-	rec, ok := actualRec[c.id]
-
-	if !ok {
+	if c.vrec == nil {
 		return fmt.Errorf("camera %d nothing recording yet", c.id)
 	}
 
-	if err := rec.Close(); err != nil {
+	if err := c.vrec.Close(); err != nil {
 		return err
 	}
 
-	delete(actualRec, c.id)
+	c.vrec = nil
 
 	return nil
 }
