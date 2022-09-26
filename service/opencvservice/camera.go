@@ -2,17 +2,11 @@ package opencvservice
 
 import (
 	"errors"
-	"fmt"
 	"image"
 	"image/color"
-	"io"
-	"log"
-	"os"
-	"path/filepath"
 	"sync"
 	"time"
 
-	"github.com/rlaskowski/easymotion/cmd"
 	"github.com/rlaskowski/easymotion/config"
 	"gocv.io/x/gocv"
 )
@@ -22,10 +16,9 @@ type Camera struct {
 	capture *gocv.VideoCapture
 	mat     gocv.Mat
 	rwmu    sync.RWMutex
-	options CameraOptions
 }
 
-func OpenCamera(id int, options CameraOptions) (*Camera, error) {
+func OpenCamera(id int) (*Camera, error) {
 	capture, err := gocv.OpenVideoCapture(id)
 	if err != nil {
 		return nil, err
@@ -35,7 +28,6 @@ func OpenCamera(id int, options CameraOptions) (*Camera, error) {
 		id:      id,
 		capture: capture,
 		mat:     gocv.NewMat(),
-		options: options,
 	}
 
 	return camera, nil
@@ -57,7 +49,7 @@ func (c *Camera) ID() int {
 	return c.id
 }
 
-func (c *Camera) VideoRecord(name, codec string) (*VideoRecord, error) {
+/* func (c *Camera) VideoRecord(name, codec string) (*VideoRecord, error) {
 	mat, err := c.readMat()
 
 	if err != nil {
@@ -79,34 +71,24 @@ func (c *Camera) VideoRecord(name, codec string) (*VideoRecord, error) {
 	}
 
 	return v, nil
-}
+} */
 
-func (c *Camera) readMat() (gocv.Mat, error) {
+// Reading current Mat value
+func (c *Camera) Read(b []byte) (n int, err error) {
 	c.rwmu.Lock()
 	defer c.rwmu.Unlock()
 
 	if ok := c.capture.Read(&c.mat); !ok {
-		return gocv.Mat{}, errors.New("unexpected error to read mat")
-	}
-
-	c.showDatetime()
-
-	return c.mat, nil
-}
-
-// Reading current Mat value
-func (c *Camera) Read(b []byte) (n int, err error) {
-	mat, err := c.readMat()
-
-	if err != nil {
-		return 0, err
+		return 0, errors.New("unexpected error to read mat")
 	}
 
 	if c.mat.Empty() {
 		return 0, nil
 	}
 
-	buff, err := gocv.IMEncode(".jpg", mat)
+	c.showDatetime()
+
+	buff, err := gocv.IMEncode(".jpg", c.mat)
 	if err != nil {
 		return 0, err
 	}
@@ -118,7 +100,7 @@ func (c *Camera) Read(b []byte) (n int, err error) {
 }
 
 // Starting recording to file system
-func (c *Camera) StartRecord() error {
+/* func (c *Camera) StartRecord() error {
 	recmux.RLock()
 
 	_, ok := actualRec[c.id]
@@ -211,10 +193,10 @@ func (c *Camera) StopRecord() error {
 	delete(actualRec, c.id)
 
 	return nil
-}
+} */
 
 func (c *Camera) showDatetime() bool {
-	if !c.options.Timeline {
+	if !config.OptionValue.CameraOption.Timeline {
 		return false
 	}
 

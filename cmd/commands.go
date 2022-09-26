@@ -1,31 +1,24 @@
 package cmd
 
 import (
-	"flag"
 	"log"
 	"os"
 
 	"github.com/rlaskowski/easymotion"
-	"github.com/rlaskowski/easymotion/config"
+	"github.com/rlaskowski/easymotion/service/opencvservice"
+	"github.com/rlaskowski/easymotion/service/queueservice"
+	"github.com/rlaskowski/easymotion/service/storage"
+	"github.com/rlaskowski/manage"
 )
-
-var (
-	VideoPath string
-)
-
-func flags() []string {
-	flag.StringVar(&VideoPath, "f", config.ProjectPath(), "Path where will be store video files")
-	flag.Parse()
-
-	return flag.Args()
-}
 
 func RunCommand(service *easymotion.SystemService) {
+	if len(os.Args) < 1 {
+		log.Fatalf("use one of commnad: run | install | uninstall | start | stop | restart")
+	}
 
-	//Init all flags
-	args := flags()
+	registerServices()
 
-	switch args[0] {
+	switch os.Args[1] {
 	case "run":
 		if err := service.RunService(); err != nil {
 			log.Println(err)
@@ -70,4 +63,11 @@ func RunCommand(service *easymotion.SystemService) {
 		log.Println("Please select option to run, for example: install | uninstall | restart | run")
 		os.Exit(0)
 	}
+}
+
+// Initializing services from service package
+func registerServices() {
+	manage.RegisterService(&opencvservice.OpenCVService{})
+	manage.RegisterService(&queueservice.RabbitMQService{})
+	manage.RegisterService(&storage.SqliteService{})
 }

@@ -1,28 +1,25 @@
 package easymotion
 
 import (
-	"os"
-
 	"github.com/kardianos/service"
+	"github.com/rlaskowski/manage"
 )
 
 type SystemContext struct {
-	service *Service
+	service *manage.ServiceInfo
 }
 
 func NewSystemContext() *SystemContext {
 	return &SystemContext{
-		service: NewService(),
+		service: &manage.ServiceInfo{},
 	}
 }
 
 func (s *SystemContext) Start(srv service.Service) error {
-	go func() {
-		if err := s.service.Start(); err != nil {
-			os.Exit(1)
-		}
+	if err := s.service.Start(); err != nil {
+		return err
+	}
 
-	}()
 	return nil
 }
 

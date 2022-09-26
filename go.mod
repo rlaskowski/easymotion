@@ -3,7 +3,7 @@ module github.com/rlaskowski/easymotion
 go 1.17
 
 require (
-	github.com/codenotary/immudb v1.2.1
+	github.com/codenotary/immudb v1.3.0
 	github.com/kardianos/service v1.2.0
 	github.com/labstack/echo/v4 v4.6.1
 	github.com/mattn/go-sqlite3 v1.14.9
@@ -23,7 +23,7 @@ require (
 	github.com/prometheus/client_model v0.2.0 // indirect
 	github.com/prometheus/common v0.29.0 // indirect
 	github.com/prometheus/procfs v0.7.1 // indirect
-	github.com/rlaskowski/manage v0.1.0 // indirect
+	github.com/rlaskowski/manage v0.5.2 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.1 // indirect
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5 // indirect
