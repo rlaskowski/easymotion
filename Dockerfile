@@ -10,4 +10,4 @@ RUN make build-raspi
 
 VOLUME [ "/videos" ]
 
-CMD ["dist/easymotion", "run", "-f", "/videos"]
+CMD ["dist/easymotion", "-f", "/videos", "run"]
