@@ -6,7 +6,7 @@ WORKDIR /go/src/gocv.io/x/gocv
 
 COPY . .
 
-RUN make build-raspi
+RUN make build-linux
 
 VOLUME [ "/videos" ]
 
