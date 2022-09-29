@@ -1,4 +1,4 @@
-FROM rlaskowski/opencv:4.5.4
+FROM rlaskowski/opencv:4.6.0
 
 ENV GOPATH /go
 
@@ -6,8 +6,8 @@ WORKDIR /go/src/gocv.io/x/gocv
 
 COPY . .
 
-RUN make build-linux
+RUN make build
 
 VOLUME [ "/videos" ]
 
-CMD ["dist/easymotion", "-f", "/videos", "run"]
+ENTRYPOINT ["dist/easymotion", "run"]

@@ -5,9 +5,9 @@ build-docker:
 	@-$(MAKE) clean
 	docker build -t rlaskowski/easymotion .
 
-build-linux:
+build:
 	@-$(MAKE) clean
-	GOOS=linux ${GOBIN} build -o dist/easymotion cmd/easymotion/main.go
+	${GOBIN} build -o dist/easymotion cmd/easymotion/main.go
 
 build-darwin-arm:
 	@-$(MAKE) clean
