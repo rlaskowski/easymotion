@@ -33,11 +33,12 @@ jobs:
           tags: rlaskowski/easymotion:latest
 
       - name: Remove Container
+        if: docker ps -a --filter "name=easymotion" --format "{{.Names}}" == 'easymotion'
         run: |
           docker rm -f easymotion
 
       - name: Run Container
-        run: docker run --name easymotion -d -p 9090:9090 -v /home/pi/videos:/videos  --device=/dev/video0:/dev/video0 rlaskowski/easymotion
+        run: docker run -d -p 9090:9090 --name easymotion --device=/dev/video0:/dev/video0 rlaskowski/easymotion
 
 
       
