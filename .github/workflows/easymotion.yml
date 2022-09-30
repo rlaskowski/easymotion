@@ -32,11 +32,11 @@ jobs:
           push: true
           tags: rlaskowski/easymotion:latest
 
-      - name: Stop Contrainer
-        run: docker-compose down
+      - name: Stop Container
+        run: docker compose down
 
       - name: Run Container
-        run: docker-compose up
+        run: docker compose up
 
 
       
