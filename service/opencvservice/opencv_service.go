@@ -40,3 +40,8 @@ func (o *OpenCVService) Stop() error {
 	log.Println("stopping openservice")
 	return o.camera.Close()
 }
+
+// Returns actual system camera instance
+func (o *OpenCVService) Camera() *Camera {
+	return o.camera
+}

@@ -1,8 +1,16 @@
 package queueservice
 
-import "github.com/rlaskowski/manage"
+import (
+	"context"
+	"log"
+
+	"github.com/rlaskowski/easymotion/config"
+	"github.com/rlaskowski/manage"
+	"github.com/rlaskowski/manage/rabbitmq"
+)
 
 type RabbitMQService struct {
+	mqservice *rabbitmq.RabbitMQService
 }
 
 func (RabbitMQService) CreateService() *manage.ServiceInfo {
@@ -18,9 +26,32 @@ func newRabbitMQ() *RabbitMQService {
 }
 
 func (r *RabbitMQService) Start() error {
+	log.Println("starting rabbitmq service")
+
+	mqservice, err := rabbitmq.Open(config.DefaultOptions.MQAddress)
+	if err != nil {
+		return err
+	}
+
+	r.mqservice = mqservice
+
 	return nil
 }
 
 func (r *RabbitMQService) Stop() error {
-	return nil
+	log.Println("stopping rabbitmq service")
+
+	return r.mqservice.Close()
+}
+
+func (r *RabbitMQService) Publish(ctx context.Context, msg rabbitmq.Message) error {
+	options := rabbitmq.PubOptions{
+		Exchange: rabbitmq.Exchange{
+			Name: "easymotion.camera.fanout",
+			Kind: rabbitmq.FanoutExchange,
+		},
+		Message: msg,
+	}
+
+	return r.mqservice.Publish(ctx, options)
 }

@@ -5,6 +5,9 @@ var (
 )
 
 type Options struct {
+	// RabbitMQ service address
+	MQAddress string `json:"mq_address"`
+
 	// Options for each camera
 	CameraOption CameraOptions `json:"camera_options"`
 
@@ -21,6 +24,7 @@ type CameraOptions struct {
 }
 
 var DefaultOptions = Options{
+	MQAddress: "amqp://guest:guest@localhost:5672/",
 	CameraOption: CameraOptions{
 		Autorec:  false,
 		Timeline: true,
