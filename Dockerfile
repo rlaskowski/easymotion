@@ -2,12 +2,12 @@ FROM rlaskowski/opencv:4.6.0
 
 ENV GOPATH /go
 
+ARG buildname
+
 WORKDIR /go/src/gocv.io/x/gocv
 
 COPY . .
 
-RUN make build
+RUN make build buildname=${buildname}
 
-VOLUME [ "/videos" ]
-
-ENTRYPOINT ["dist/easymotion", "run"]
+ENTRYPOINT ["dist/${buildname}/${buildname}", "run"]

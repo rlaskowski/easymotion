@@ -12,10 +12,6 @@ import (
 )
 
 func RunCommand(service *easymotion.SystemService) {
-	if len(os.Args) < 1 {
-		log.Fatalf("use one of commnad: run | install | uninstall | start | stop | restart")
-	}
-
 	registerServices()
 
 	switch os.Args[1] {

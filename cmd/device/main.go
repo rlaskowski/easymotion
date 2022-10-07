@@ -11,7 +11,7 @@ import (
 func main() {
 	systemService, err := easymotion.CreateSystemService()
 	if err != nil {
-		log.Fatalf("Unexpected error: %s", err.Error())
+		log.Fatalf("unexpected error: %s", err.Error())
 		os.Exit(1)
 	}
 
