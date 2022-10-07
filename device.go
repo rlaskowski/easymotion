@@ -17,6 +17,8 @@ import (
 type Device struct {
 	opencv    *opencvservice.OpenCVService
 	mqservice *queueservice.RabbitMQService
+	ctx       context.Context
+	cancel    context.CancelFunc
 }
 
 func NewRunner() Runner {
@@ -24,7 +26,12 @@ func NewRunner() Runner {
 }
 
 func newDevice() *Device {
-	return &Device{}
+	ctx, cancel := context.WithCancel(context.Background())
+
+	return &Device{
+		ctx:    ctx,
+		cancel: cancel,
+	}
 }
 
 func (d *Device) Run() error {
@@ -34,32 +41,40 @@ func (d *Device) Run() error {
 
 	buff := &bytes.Buffer{}
 
-	for {
-		c := d.opencv.Camera()
+	go func() {
+		for {
+			c := d.opencv.Camera()
 
-		n, err := io.Copy(buff, c)
-		if err != nil {
-			log.Printf("reading camera error: %s", err.Error())
-			break
-		}
-
-		if n > 0 {
-			msg := rabbitmq.Message{
-				ContentType: "image/jpg",
-				Body:        buff.Bytes(),
+			n, err := io.Copy(buff, c)
+			if err != nil {
+				log.Printf("reading camera error: %s", err.Error())
+				break
 			}
 
-			if err := d.mqservice.Publish(context.Background(), msg); err != nil {
-				log.Printf("rabbitmq publishing error: %s", err.Error())
+			if n > 0 {
+				msg := rabbitmq.Message{
+					ContentType: "image/jpg",
+					Body:        buff.Bytes(),
+				}
+
+				if err := d.mqservice.Publish(context.Background(), msg); err != nil {
+					log.Printf("rabbitmq publishing error: %s", err.Error())
+				}
+			}
+			select {
+			case <-d.ctx.Done():
+				log.Printf("running device error: %s", d.ctx.Err().Error())
+				return
+			default:
 			}
 		}
-
-	}
+	}()
 
 	return nil
 }
 
 func (d *Device) Close() error {
+	d.cancel()
 	return nil
 }
 
