@@ -27,7 +27,7 @@ jobs:
           go-version: ${{ matrix.go }}
 
       - name: Build on ${{ matrix.os }} and Go ${{ matrix.go }}
-        runs: make build
+        run: make build
 
 
       
