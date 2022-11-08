@@ -1,12 +1,11 @@
-name: CI easymotion
-
+name: easymotion
 on: [push]
 jobs:
   build:
     strategy:
       matrix:
         os: [self-hosted]
-        go: [1.17]
+        go: [1.17.x]
     name: ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     steps:        
