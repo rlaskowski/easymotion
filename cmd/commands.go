@@ -12,6 +12,11 @@ import (
 )
 
 func RunCommand(service *easymotion.SystemService) {
+	if len(os.Args) < 2 {
+		log.Println("Please select option to run, for example: install | uninstall | restart | run")
+		os.Exit(0)
+	}
+
 	registerServices()
 
 	switch os.Args[1] {
@@ -56,9 +61,9 @@ func RunCommand(service *easymotion.SystemService) {
 			log.Println(err)
 		}
 	default:
-		log.Println("Please select option to run, for example: install | uninstall | restart | run")
-		os.Exit(0)
+		log.Printf("Option %s wasn't found", os.Args[1])
 	}
+
 }
 
 // Initializing services from service package

@@ -39,12 +39,11 @@ func (d *Device) Run() error {
 		return err
 	}
 
+	c := d.opencv.Camera()
 	buff := &bytes.Buffer{}
 
 	go func() {
 		for {
-			c := d.opencv.Camera()
-
 			n, err := io.Copy(buff, c)
 			if err != nil {
 				log.Printf("reading camera error: %s", err.Error())
