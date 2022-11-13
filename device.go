@@ -1,3 +1,5 @@
+//go:build device
+
 package easymotion
 
 import (
@@ -10,6 +12,7 @@ import (
 
 	"github.com/rlaskowski/easymotion/service/opencvservice"
 	"github.com/rlaskowski/easymotion/service/queueservice"
+	"github.com/rlaskowski/easymotion/service/storage"
 	"github.com/rlaskowski/manage"
 	"github.com/rlaskowski/manage/rabbitmq"
 )
@@ -34,7 +37,17 @@ func newDevice() *Device {
 	}
 }
 
+func (d *Device) RegisterServices() error {
+	manage.RegisterService(&opencvservice.OpenCVService{})
+	manage.RegisterService(&queueservice.RabbitMQService{})
+	manage.RegisterService(&storage.SqliteService{})
+
+	return nil
+}
+
 func (d *Device) Run() error {
+	log.Println("running device")
+
 	if err := d.services(); err != nil {
 		return err
 	}

@@ -5,10 +5,6 @@ import (
 	"os"
 
 	"github.com/rlaskowski/easymotion"
-	"github.com/rlaskowski/easymotion/service/opencvservice"
-	"github.com/rlaskowski/easymotion/service/queueservice"
-	"github.com/rlaskowski/easymotion/service/storage"
-	"github.com/rlaskowski/manage"
 )
 
 func RunCommand(service *easymotion.SystemService) {
@@ -16,8 +12,6 @@ func RunCommand(service *easymotion.SystemService) {
 		log.Println("Please select option to run, for example: install | uninstall | restart | run")
 		os.Exit(0)
 	}
-
-	registerServices()
 
 	switch os.Args[1] {
 	case "run":
@@ -64,11 +58,4 @@ func RunCommand(service *easymotion.SystemService) {
 		log.Printf("Option %s wasn't found", os.Args[1])
 	}
 
-}
-
-// Initializing services from service package
-func registerServices() {
-	manage.RegisterService(&opencvservice.OpenCVService{})
-	manage.RegisterService(&queueservice.RabbitMQService{})
-	manage.RegisterService(&storage.SqliteService{})
 }

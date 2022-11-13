@@ -10,13 +10,13 @@ build-docker:
 
 build:
 	@-$(MAKE) clean
-	@GOOS=$(os) GOARCH=$(arch) ${gobin} build --tags $(buildname) -o dist/$(buildname)/$(buildname) cmd/$(buildname)/main.go
+	@GOOS=$(os) GOARCH=$(arch) ${gobin} build -tags $(buildname) -o dist/$(buildname)/$(buildname) cmd/easymotion/main.go
 
 get-dependencies:
 	@-${gobin} get -d -v ./...
 
 run:
-	${gobin} run cmd/$(buildname)/main.go run
+	${gobin} run -tags $(buildname) cmd/easymotion/main.go run
 
 clean:
 	@rm -Rf dist data
