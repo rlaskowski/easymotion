@@ -55,3 +55,14 @@ func (r *RabbitMQService) Publish(ctx context.Context, msg rabbitmq.Message) err
 
 	return r.mqservice.Publish(ctx, options)
 }
+
+func (r *RabbitMQService) Subscribe(ctx context.Context) (<-chan rabbitmq.Message, error) {
+	options := rabbitmq.SubOptions{
+		Exchange: rabbitmq.Exchange{
+			Name: "easymotion.camera.fanout",
+			Kind: rabbitmq.FanoutExchange,
+		},
+	}
+
+	return r.mqservice.Subscribe(ctx, options)
+}

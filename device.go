@@ -3,11 +3,9 @@
 package easymotion
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"log"
 
 	"github.com/rlaskowski/easymotion/service/opencvservice"
@@ -53,20 +51,20 @@ func (d *Device) Run() error {
 	}
 
 	c := d.opencv.Camera()
-	buff := &bytes.Buffer{}
+	buff := make([]byte, 1024*1024)
 
 	go func() {
 		for {
-			n, err := io.Copy(buff, c)
+			n, err := c.Read(buff)
 			if err != nil {
 				log.Printf("reading camera error: %s", err.Error())
-				break
+				continue
 			}
 
 			if n > 0 {
 				msg := rabbitmq.Message{
 					ContentType: "image/jpg",
-					Body:        buff.Bytes(),
+					Body:        buff[:n],
 				}
 
 				if err := d.mqservice.Publish(context.Background(), msg); err != nil {
