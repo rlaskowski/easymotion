@@ -1,10 +1,14 @@
 package opencvservice
 
 import (
+	"fmt"
 	"io"
 	"os"
+	"path"
 	"sync"
+	"time"
 
+	"github.com/rlaskowski/easymotion/config"
 	"gocv.io/x/gocv"
 )
 
@@ -15,6 +19,15 @@ var (
 type VideoRecord struct {
 	name        string
 	videoWriter *gocv.VideoWriter
+}
+
+func NewVideoRecord() *VideoRecord {
+	name := fmt.Sprintf("cam%d_%s.avi", 0, time.Now().Format("20060102_150405"))
+	path := path.Join(config.WorkingDirectory(), "data", name)
+
+	return &VideoRecord{
+		name: path,
+	}
 }
 
 func (v *VideoRecord) Write(mat gocv.Mat) error {

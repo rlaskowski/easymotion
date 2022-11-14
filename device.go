@@ -51,20 +51,19 @@ func (d *Device) Run() error {
 	}
 
 	c := d.opencv.Camera()
-	buff := make([]byte, 1024*1024)
 
 	go func() {
 		for {
-			n, err := c.Read(buff)
+			b, err := MatToBytes(c)
 			if err != nil {
-				log.Printf("reading camera error: %s", err.Error())
-				continue
+				log.Printf("reading mat to bytes error: %s", err.Error())
+				break
 			}
 
-			if n > 0 {
+			if len(b) > 0 {
 				msg := rabbitmq.Message{
-					ContentType: "image/jpg",
-					Body:        buff[:n],
+					ContentType: "application/octet-stream",
+					Body:        b,
 				}
 
 				if err := d.mqservice.Publish(context.Background(), msg); err != nil {

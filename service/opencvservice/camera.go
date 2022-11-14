@@ -11,6 +11,12 @@ import (
 	"gocv.io/x/gocv"
 )
 
+type MatOption struct {
+	rows, cols int
+	kind       uint
+	data       []byte
+}
+
 type Camera struct {
 	id      int
 	capture *gocv.VideoCapture
@@ -69,22 +75,20 @@ func (c *Camera) ID() int {
 	return v, nil
 } */
 
-// Reading current Mat value
+// Reading gocv.Mat to byte slice
 func (c *Camera) Read(b []byte) (n int, err error) {
-	c.rwmu.Lock()
-	defer c.rwmu.Unlock()
-
-	if ok := c.capture.Read(&c.mat); !ok {
-		return 0, errors.New("unexpected error to read mat")
+	mat, err := c.ReadMat()
+	if err != nil {
+		return 0, err
 	}
 
-	if c.mat.Empty() {
+	if mat.Empty() {
 		return 0, nil
 	}
 
 	c.showDatetime()
 
-	buff, err := gocv.IMEncode(".jpg", c.mat)
+	buff, err := gocv.IMEncode(".jpg", *mat)
 	if err != nil {
 		return 0, err
 	}
@@ -93,6 +97,17 @@ func (c *Camera) Read(b []byte) (n int, err error) {
 	buff.Close()
 
 	return n, nil
+}
+
+func (c *Camera) ReadMat() (*gocv.Mat, error) {
+	c.rwmu.Lock()
+	defer c.rwmu.Unlock()
+
+	if ok := c.capture.Read(&c.mat); !ok {
+		return nil, errors.New("unexpected error to read mat")
+	}
+
+	return &c.mat, nil
 }
 
 // Starting recording to file system
