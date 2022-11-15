@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/rlaskowski/easymotion/config"
 	"github.com/rlaskowski/easymotion/service/opencvservice"
 	"github.com/rlaskowski/easymotion/service/queueservice"
 	"github.com/rlaskowski/manage"
@@ -55,7 +56,7 @@ func (h *Hub) Run() error {
 				break
 			}
 
-			if rec == nil {
+			if rec == nil || rec.Size() >= config.ToBytes(10) {
 				rec, err = opencvservice.OpenVideoRecord(mat)
 				if err != nil {
 					log.Fatal(err)

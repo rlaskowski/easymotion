@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/kardianos/service v1.2.0
 	github.com/mattn/go-sqlite3 v1.14.9
-	github.com/rlaskowski/manage v0.5.2
+	github.com/rlaskowski/manage v0.5.3
 	gocv.io/x/gocv v0.29.0
 )
 

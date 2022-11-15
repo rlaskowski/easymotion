@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"path/filepath"
 	"time"
 
 	"github.com/rlaskowski/easymotion/config"
@@ -12,21 +13,29 @@ import (
 )
 
 type VideoRecord struct {
-	name        string
+	path        string
 	videoWriter *gocv.VideoWriter
 }
 
 func OpenVideoRecord(mat gocv.Mat) (*VideoRecord, error) {
-	name := fmt.Sprintf("cam%d_%s.avi", 0, time.Now().Format("20060102_150405"))
-	path := path.Join(config.WorkingDirectory(), name)
+	path := path.Join(config.WorkingDirectory(), "videos")
 
-	writer, err := gocv.VideoWriterFile(name, "h264", 30, mat.Cols(), mat.Rows(), true)
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		if err := os.MkdirAll(path, 0777); err != nil {
+			return nil, fmt.Errorf("path: %s to store video file not exists", path)
+		}
+	}
+
+	name := fmt.Sprintf("cam%d_%s.avi", 0, time.Now().Format("20060102_150405"))
+	path = filepath.Join(path, name)
+
+	writer, err := gocv.VideoWriterFile(path, "h264", 30, mat.Cols(), mat.Rows(), true)
 	if err != nil {
 		return nil, err
 	}
 
 	return &VideoRecord{
-		name:        path,
+		path:        path,
 		videoWriter: writer,
 	}, nil
 }
@@ -48,7 +57,7 @@ func (v *VideoRecord) Write(mat gocv.Mat) error {
 }
 
 func (v *VideoRecord) Size() int64 {
-	fi, err := os.Stat(v.name)
+	fi, err := os.Stat(v.path)
 	if err != nil {
 		return 0
 	}
