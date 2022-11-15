@@ -1,15 +1,17 @@
 package easymotion
 
 import (
-	"unsafe"
+	"bytes"
+	"encoding/gob"
 
 	"github.com/rlaskowski/easymotion/service/opencvservice"
+	"gocv.io/x/gocv"
 )
 
 type MatOption struct {
-	rows, cols uint8
-	kind       uint8
-	data       []byte
+	Rows, Cols int
+	Kind       int
+	Data       []byte
 }
 
 func MatToBytes(cam *opencvservice.Camera) ([]byte, error) {
@@ -21,18 +23,41 @@ func MatToBytes(cam *opencvservice.Camera) ([]byte, error) {
 	b := mat.ToBytes()
 
 	moption := &MatOption{
-		rows: uint8(mat.Rows()),
-		cols: uint8(mat.Cols()),
-		kind: uint8(mat.Type()),
-		data: b,
+		Rows: mat.Rows(),
+		Cols: mat.Cols(),
+		Kind: int(mat.Type()),
+		Data: b,
+	}
+	w := &bytes.Buffer{}
+	enc := gob.NewEncoder(w)
+	if err := enc.Encode(moption); err != nil {
+		return nil, err
 	}
 
-	buff := *(*[]byte)(unsafe.Pointer(&moption))
+	//buff := *(*[]byte)(unsafe.Pointer(&moption))
 
 	/* buff := &bytes.Buffer{}
 	if err := binary.Write(buff, binary.BigEndian, moption); err != nil {
 		return nil, err
 	} */
 
-	return buff, nil
+	return w.Bytes(), nil
+}
+
+func MatFromBytes(data []byte) (gocv.Mat, error) {
+	moption := &MatOption{}
+
+	r := bytes.NewReader(data)
+	dec := gob.NewDecoder(r)
+	if err := dec.Decode(moption); err != nil {
+		return gocv.Mat{}, err
+	}
+
+	mat, err := gocv.NewMatFromBytes(int(moption.Rows), int(moption.Cols), gocv.MatType(moption.Kind), moption.Data)
+	if err != nil {
+		return gocv.Mat{}, err
+	}
+
+	return mat, nil
+
 }

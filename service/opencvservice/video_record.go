@@ -5,15 +5,10 @@ import (
 	"io"
 	"os"
 	"path"
-	"sync"
 	"time"
 
 	"github.com/rlaskowski/easymotion/config"
 	"gocv.io/x/gocv"
-)
-
-var (
-	recmux sync.RWMutex
 )
 
 type VideoRecord struct {
@@ -21,13 +16,19 @@ type VideoRecord struct {
 	videoWriter *gocv.VideoWriter
 }
 
-func NewVideoRecord() *VideoRecord {
+func OpenVideoRecord(mat gocv.Mat) (*VideoRecord, error) {
 	name := fmt.Sprintf("cam%d_%s.avi", 0, time.Now().Format("20060102_150405"))
-	path := path.Join(config.WorkingDirectory(), "data", name)
+	path := path.Join(config.WorkingDirectory(), name)
+
+	writer, err := gocv.VideoWriterFile(name, "h264", 30, mat.Cols(), mat.Rows(), true)
+	if err != nil {
+		return nil, err
+	}
 
 	return &VideoRecord{
-		name: path,
-	}
+		name:        path,
+		videoWriter: writer,
+	}, nil
 }
 
 func (v *VideoRecord) Write(mat gocv.Mat) error {
@@ -36,7 +37,9 @@ func (v *VideoRecord) Write(mat gocv.Mat) error {
 	}
 
 	if v.IsOpened() {
-		v.videoWriter.Write(mat)
+		if err := v.videoWriter.Write(mat); err != nil {
+			return err
+		}
 	} else {
 		return io.EOF
 	}

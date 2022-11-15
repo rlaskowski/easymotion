@@ -7,12 +7,10 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"unsafe"
 
 	"github.com/rlaskowski/easymotion/service/opencvservice"
 	"github.com/rlaskowski/easymotion/service/queueservice"
 	"github.com/rlaskowski/manage"
-	"gocv.io/x/gocv"
 )
 
 type Hub struct {
@@ -40,17 +38,32 @@ func (h *Hub) Run() error {
 		return err
 	}
 
-	rec := opencvservice.NewVideoRecord()
-
 	sub, err := h.mqservice.Subscribe(context.Background())
 	if err != nil {
 
 		return err
 	}
 
+	var rec *opencvservice.VideoRecord
+
 	go func() {
 		for msg := range sub {
-			mat := *(*gocv.Mat)(unsafe.Pointer(&msg.Body))
+			//mat := *(*gocv.Mat)(unsafe.Pointer(&msg.Body))
+			mat, err := MatFromBytes(msg.Body)
+			if err != nil {
+				log.Fatal(err)
+				break
+			}
+
+			if rec == nil {
+				rec, err = opencvservice.OpenVideoRecord(mat)
+				if err != nil {
+					log.Fatal(err)
+					break
+				}
+				continue
+			}
+
 			if err := rec.Write(mat); err != nil {
 				continue
 			}
