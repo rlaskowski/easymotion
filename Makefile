@@ -1,27 +1,22 @@
-GOBIN := go
-BUILDNAME := easymotion
+gobin := go
+os := linux
+arch := amd64
+buildname := device
+
 
 build-docker:
 	@-$(MAKE) clean
-	docker build -t rlaskowski/easymotion .
+	docker build --build-arg buildname=$(buildname) -t rlaskowski/easymotion-$(buildname) .
 
-build-linux:
+build:
 	@-$(MAKE) clean
-	GOOS=linux ${GOBIN} build -o dist/easymotion cmd/easymotion/main.go
-
-build-darwin-arm:
-	@-$(MAKE) clean
-	GOOS=darwin GOARCH=arm64 ${GOBIN} build -o dist/easymotion cmd/easymotion/main.go
-
-build-raspi:
-	@-$(MAKE) clean
-	GOOS=linux GOARCH=arm ${GOBIN} build -o dist/easymotion cmd/easymotion/main.go
+	@GOOS=$(os) GOARCH=$(arch) ${gobin} build -tags $(buildname) -o dist/$(buildname)/$(buildname) cmd/easymotion/main.go
 
 get-dependencies:
-	@-${GOBIN} get -d -v ./...
+	@-${gobin} get -d -v ./...
 
 run:
-	${GOBIN} run cmd/easymotion/main.go run
+	${gobin} run -tags $(buildname) cmd/easymotion/main.go run
 
 clean:
 	@rm -Rf dist data

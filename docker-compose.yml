@@ -1,0 +1,13 @@
+version: '3.9'
+services:
+  easymotion:
+    image: rlaskowski/easymotion
+    ports:
+      - "9090:9090"
+    devices:
+      - "/dev/video0:/dev/video0"
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports: 
+      - "5672:5672"
+      - "15672:15672"

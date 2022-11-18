@@ -2,31 +2,29 @@ package opencvservice
 
 import (
 	"errors"
-	"fmt"
 	"image"
 	"image/color"
-	"io"
-	"log"
-	"os"
-	"path/filepath"
 	"sync"
 	"time"
 
-	"github.com/rlaskowski/easymotion/cmd"
 	"github.com/rlaskowski/easymotion/config"
 	"gocv.io/x/gocv"
 )
+
+type MatOption struct {
+	rows, cols int
+	kind       uint
+	data       []byte
+}
 
 type Camera struct {
 	id      int
 	capture *gocv.VideoCapture
 	mat     gocv.Mat
 	rwmu    sync.RWMutex
-	options CameraOptions
-	vrec    *VideoRecord
 }
 
-func OpenCamera(id int, options CameraOptions) (*Camera, error) {
+func OpenCamera(id int) (*Camera, error) {
 	capture, err := gocv.OpenVideoCapture(id)
 	if err != nil {
 		return nil, err
@@ -36,7 +34,6 @@ func OpenCamera(id int, options CameraOptions) (*Camera, error) {
 		id:      id,
 		capture: capture,
 		mat:     gocv.NewMat(),
-		options: options,
 	}
 
 	return camera, nil
@@ -58,9 +55,8 @@ func (c *Camera) ID() int {
 	return c.id
 }
 
-func (c *Camera) VideoRecord(name, codec string) (*VideoRecord, error) {
-	c.rwmu.RLock()
-	defer c.rwmu.RUnlock()
+/* func (c *Camera) VideoRecord(name, codec string) (*VideoRecord, error) {
+	mat, err := c.readMat()
 
 	if c.mat.Empty() {
 		return nil, errors.New("to write a video file empty mat is not acceptable")
@@ -77,28 +73,22 @@ func (c *Camera) VideoRecord(name, codec string) (*VideoRecord, error) {
 	}
 
 	return v, nil
-}
+} */
 
-func (c *Camera) ReadMat() {
-	for {
-		c.rwmu.Lock()
-
-		c.capture.Read(&c.mat)
-
-		c.rwmu.Unlock()
-	}
-}
-
-// Reading current Mat value
+// Reading gocv.Mat to byte slice
 func (c *Camera) Read(b []byte) (n int, err error) {
-	c.rwmu.RLock()
-	defer c.rwmu.RUnlock()
+	mat, err := c.ReadMat()
+	if err != nil {
+		return 0, err
+	}
 
-	if c.mat.Empty() {
+	if mat.Empty() {
 		return 0, nil
 	}
 
-	buff, err := gocv.IMEncode(".jpg", c.mat)
+	c.showDatetime()
+
+	buff, err := gocv.IMEncode(".jpg", *mat)
 	if err != nil {
 		return 0, err
 	}
@@ -109,9 +99,20 @@ func (c *Camera) Read(b []byte) (n int, err error) {
 	return n, nil
 }
 
+func (c *Camera) ReadMat() (*gocv.Mat, error) {
+	c.rwmu.Lock()
+	defer c.rwmu.Unlock()
+
+	if ok := c.capture.Read(&c.mat); !ok {
+		return nil, errors.New("unexpected error to read mat")
+	}
+
+	return &c.mat, nil
+}
+
 // Starting recording to file system
-func (c *Camera) StartRecord() error {
-	recmux.Lock()
+/* func (c *Camera) StartRecord() error {
+	recmux.RLock()
 
 	if c.vrec != nil {
 		recmux.Unlock()
@@ -196,10 +197,10 @@ func (c *Camera) StopRecord() error {
 	c.vrec = nil
 
 	return nil
-}
+} */
 
 func (c *Camera) showDatetime() bool {
-	if !c.options.Timeline {
+	if !config.OptionValue.CameraOption.Timeline {
 		return false
 	}
 

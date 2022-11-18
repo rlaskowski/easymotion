@@ -1,31 +1,19 @@
 package cmd
 
 import (
-	"flag"
 	"log"
 	"os"
 
 	"github.com/rlaskowski/easymotion"
-	"github.com/rlaskowski/easymotion/config"
 )
-
-var (
-	VideoPath string
-)
-
-func flags() []string {
-	flag.StringVar(&VideoPath, "f", config.ProjectPath(), "Path where will be store video files")
-	flag.Parse()
-
-	return flag.Args()
-}
 
 func RunCommand(service *easymotion.SystemService) {
+	if len(os.Args) < 2 {
+		log.Println("Please select option to run, for example: install | uninstall | restart | run")
+		os.Exit(0)
+	}
 
-	//Init all flags
-	args := flags()
-
-	switch args[0] {
+	switch os.Args[1] {
 	case "run":
 		if err := service.RunService(); err != nil {
 			log.Println(err)
@@ -67,7 +55,7 @@ func RunCommand(service *easymotion.SystemService) {
 			log.Println(err)
 		}
 	default:
-		log.Println("Please select option to run, for example: install | uninstall | restart | run")
-		os.Exit(0)
+		log.Printf("Option %s wasn't found", os.Args[1])
 	}
+
 }

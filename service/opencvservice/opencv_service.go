@@ -1,80 +1,47 @@
 package opencvservice
 
 import (
-	"errors"
-	"sync"
+	"log"
 
-	"github.com/rlaskowski/easymotion"
+	"github.com/rlaskowski/manage"
 )
 
 type OpenCVService struct {
-	cammu   *sync.RWMutex
-	cameras map[int]*Camera
+	camera *Camera
 }
 
-func (OpenCVService) CreateService() *easymotion.ServiceInfo {
-	return &easymotion.ServiceInfo{
+func (OpenCVService) CreateService() *manage.ServiceInfo {
+	return &manage.ServiceInfo{
 		ID:        "service.opencv",
+		Priority:  1,
 		Intstance: newCaptureService(),
 	}
 }
 
 func newCaptureService() *OpenCVService {
-	return &OpenCVService{
-		cammu:   &sync.RWMutex{},
-		cameras: make(map[int]*Camera),
-	}
+	return &OpenCVService{}
 }
 
 // Starting all process
 func (o *OpenCVService) Start() error {
+	log.Println("starting openservice")
+	cam, err := OpenCamera(0)
+	if err != nil {
+		return err
+	}
+
+	o.camera = cam
+
 	return nil
 }
 
 // Stopping all active processes
 func (o *OpenCVService) Stop() error {
-	for _, camera := range o.cameras {
-		o.cammu.Lock()
-
-		if err := camera.Close(); err != nil {
-			o.cammu.Unlock()
-			return err
-		}
-
-		o.cammu.Unlock()
-	}
-
-	return nil
+	log.Println("stopping openservice")
+	return o.camera.Close()
 }
 
-// Finding camera instance in service list
-func (o *OpenCVService) Camera(id int) (*Camera, error) {
-	o.cammu.RLock()
-	defer o.cammu.RUnlock()
-
-	camera, ok := o.cameras[id]
-
-	if !ok {
-		return nil, errors.New("camera instance not found")
-	}
-
-	return camera, nil
-}
-
-// Creating new camera instance
-func (o *OpenCVService) CreateCamera(id int, options CameraOptions) (*Camera, error) {
-	o.cammu.Lock()
-	defer o.cammu.Unlock()
-
-	cam, err := OpenCamera(id, options)
-
-	if err != nil {
-		return nil, err
-	}
-
-	go cam.ReadMat()
-
-	o.cameras[id] = cam
-
-	return cam, nil
+// Returns actual system camera instance
+func (o *OpenCVService) Camera() *Camera {
+	return o.camera
 }
