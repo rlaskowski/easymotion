@@ -24,7 +24,7 @@ type CameraOptions struct {
 }
 
 var DefaultOptions = Options{
-	MQAddress: "amqp://guest:guest@localhost:5672/",
+	MQAddress: hubURL(),
 	CameraOption: CameraOptions{
 		Autorec:  false,
 		Timeline: true,
