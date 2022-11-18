@@ -11,12 +11,6 @@ import (
 	"gocv.io/x/gocv"
 )
 
-type MatOption struct {
-	rows, cols int
-	kind       uint
-	data       []byte
-}
-
 type Camera struct {
 	id      int
 	capture *gocv.VideoCapture
@@ -54,26 +48,6 @@ func (c *Camera) Close() error {
 func (c *Camera) ID() int {
 	return c.id
 }
-
-/* func (c *Camera) VideoRecord(name, codec string) (*VideoRecord, error) {
-	mat, err := c.readMat()
-
-	if c.mat.Empty() {
-		return nil, errors.New("to write a video file empty mat is not acceptable")
-	}
-
-	writer, err := gocv.VideoWriterFile(name, codec, 30, c.mat.Cols(), c.mat.Rows(), true)
-	if err != nil {
-		return nil, err
-	}
-
-	v := &VideoRecord{
-		name:        name,
-		videoWriter: writer,
-	}
-
-	return v, nil
-} */
 
 // Reading gocv.Mat to byte slice
 func (c *Camera) Read(b []byte) (n int, err error) {

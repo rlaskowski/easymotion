@@ -1,7 +1,7 @@
 package easymotion
 
 type Runner interface {
-	RegisterServices() error
+	RegisterServices()
 	Run() error
 	Close() error
 }

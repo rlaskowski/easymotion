@@ -18,9 +18,7 @@ func NewSystemContext() *SystemContext {
 }
 
 func (s *SystemContext) Start(srv service.Service) error {
-	if err := s.runner.RegisterServices(); err != nil {
-		return err
-	}
+	s.runner.RegisterServices()
 
 	if err := s.service.Start(); err != nil {
 		return err

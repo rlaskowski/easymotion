@@ -73,6 +73,17 @@ func KeyFile() string {
 	return envPath("EASYMOTION_TLS_CERTFILE_TLS_PATH", filename)
 }
 
+func hubURL() string {
+	hubu := "amqp://guest:guest@localhost:5672/"
+
+	env, ok := os.LookupEnv("EASYMOTION_HUB_URL")
+	if ok {
+		hubu = env
+	}
+
+	return hubu
+}
+
 func envPath(env, filename string) string {
 	if v, ok := os.LookupEnv(env); ok {
 		return filepath.Join(v, filename)

@@ -35,12 +35,10 @@ func newDevice() *Device {
 	}
 }
 
-func (d *Device) RegisterServices() error {
+func (d *Device) RegisterServices() {
 	manage.RegisterService(&opencvservice.OpenCVService{})
 	manage.RegisterService(&queueservice.RabbitMQService{})
 	manage.RegisterService(&storage.SqliteService{})
-
-	return nil
 }
 
 func (d *Device) Run() error {
