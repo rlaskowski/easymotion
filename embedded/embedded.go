@@ -2,5 +2,5 @@ package embedded
 
 import "embed"
 
-//go:embed immudb
+//go:embed sqlite
 var Files embed.FS

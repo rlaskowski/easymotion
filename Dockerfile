@@ -1,11 +1,13 @@
-FROM rlaskowski/opencv:4.5.4
+FROM rlaskowski/opencv:4.6.0
 
 ENV GOPATH /go
+
+ARG buildname
 
 WORKDIR /go/src/gocv.io/x/gocv
 
 COPY . .
 
-RUN make build-raspi
+RUN make build buildname=${buildname}
 
-CMD ["dist/easymotion", "run"]
+ENTRYPOINT ["dist/${buildname}/${buildname}", "run"]

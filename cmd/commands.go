@@ -1,25 +1,16 @@
 package cmd
 
 import (
-	"fmt"
 	"log"
 	"os"
 
 	"github.com/rlaskowski/easymotion"
-	"github.com/rlaskowski/easymotion/service/dbservice"
-	"github.com/rlaskowski/easymotion/service/httpservice"
-	"github.com/rlaskowski/easymotion/service/opencvservice"
 )
-
-func init() {
-	easymotion.RegisterService(&httpservice.HttpServer{})
-	easymotion.RegisterService(&opencvservice.OpenCVService{})
-	easymotion.RegisterService(&dbservice.ImmuDBService{})
-}
 
 func RunCommand(service *easymotion.SystemService) {
 	if len(os.Args) < 2 {
-		fmt.Println("Please select option to run, for example: install | uninstall | restart | run")
+		log.Println("Please select option to run, for example: install | uninstall | restart | run")
+		os.Exit(0)
 	}
 
 	switch os.Args[1] {
@@ -63,5 +54,8 @@ func RunCommand(service *easymotion.SystemService) {
 		if err := service.RestartService(); err != nil {
 			log.Println(err)
 		}
+	default:
+		log.Printf("Option %s wasn't found", os.Args[1])
 	}
+
 }
