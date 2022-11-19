@@ -37,6 +37,7 @@ func newHub() *Hub {
 
 func (h *Hub) RegisterServices() {
 	manage.RegisterService(&queueservice.RabbitMQService{})
+	manage.RegisterService(&httpservice.HttpServer{})
 }
 
 func (h *Hub) Run() error {
@@ -58,13 +59,13 @@ func (h *Hub) Run() error {
 
 	go func() {
 		for msg := range sub {
-			matopt := h.matoptPool.Get().(opencvservice.MatOption)
+			matopt := h.matoptPool.Get().(*opencvservice.MatOption)
 
 			mat, err := matopt.Mat(msg.Body)
 			if err != nil {
 				log.Fatal(err)
 
-				h.matoptPool.Put(&matopt)
+				h.matoptPool.Put(matopt)
 				break
 			}
 
@@ -72,19 +73,19 @@ func (h *Hub) Run() error {
 				rec, err = opencvservice.OpenVideoRecord(mat)
 				if err != nil {
 					log.Fatal(err)
-					h.matoptPool.Put(&matopt)
+					h.matoptPool.Put(matopt)
 
 					break
 				}
-				h.matoptPool.Put(&matopt)
+				h.matoptPool.Put(matopt)
 				continue
 			}
 
 			if err := rec.Write(mat); err != nil {
-				h.matoptPool.Put(&matopt)
+				h.matoptPool.Put(matopt)
 				continue
 			}
-			h.matoptPool.Put(&matopt)
+			h.matoptPool.Put(matopt)
 		}
 		rec.Close()
 	}()
@@ -113,7 +114,7 @@ func (h *Hub) StreamVideo() <-chan httpservice.VideoResponse {
 			if err != nil {
 				log.Fatal(err)
 
-				h.matoptPool.Put(&matopt)
+				h.matoptPool.Put(matopt)
 				break
 			}
 
@@ -121,7 +122,7 @@ func (h *Hub) StreamVideo() <-chan httpservice.VideoResponse {
 				Data: data,
 			}
 
-			h.matoptPool.Put(&matopt)
+			h.matoptPool.Put(matopt)
 			vrchan <- v
 		}
 		close(vrchan)

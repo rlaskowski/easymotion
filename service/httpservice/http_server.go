@@ -42,6 +42,8 @@ func (h *HttpServer) configure() {
 		Format: `Method: ${method}, Path: ${path}, Remote IP: ${remote_ip}, Status: ${status}`,
 	}))
 
+	h.echo.GET("/video/stream", h.Stream)
+
 }
 
 func (h *HttpServer) Start() error {

@@ -20,12 +20,12 @@ type MatOption struct {
 	Data       []byte
 }
 
-func NewMatOption() MatOption {
-	return MatOption{}
+func NewMatOption() *MatOption {
+	return &MatOption{}
 }
 
 // Transferring gocv.Mat type to byte array
-func (m MatOption) ToBytes(cam *Camera) ([]byte, error) {
+func (m *MatOption) ToBytes(cam *Camera) ([]byte, error) {
 	mat, err := cam.ReadMat()
 	if err != nil {
 		return nil, err
@@ -49,7 +49,7 @@ func (m MatOption) ToBytes(cam *Camera) ([]byte, error) {
 }
 
 // Creating gocv.Mat type from byte array
-func (m MatOption) Mat(data []byte) (gocv.Mat, error) {
+func (m *MatOption) Mat(data []byte) (gocv.Mat, error) {
 	r := bytes.NewReader(data)
 	dec := gob.NewDecoder(r)
 
@@ -65,7 +65,7 @@ func (m MatOption) Mat(data []byte) (gocv.Mat, error) {
 	return mfb, nil
 }
 
-func (m MatOption) MatCompress(data []byte, c CompressType) ([]byte, error) {
+func (m *MatOption) MatCompress(data []byte, c CompressType) ([]byte, error) {
 	var fileExt gocv.FileExt
 
 	switch c {

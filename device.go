@@ -77,8 +77,8 @@ func (d *Device) sendData() {
 	c := d.opencv.Camera()
 
 	for {
-		matopt := d.matoptPool.Get().(opencvservice.MatOption)
-		defer d.matoptPool.Put(&matopt)
+		matopt := d.matoptPool.Get().(*opencvservice.MatOption)
+		defer d.matoptPool.Put(matopt)
 
 		b, err := matopt.ToBytes(c)
 		if err != nil {
