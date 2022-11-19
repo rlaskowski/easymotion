@@ -108,7 +108,7 @@ func (h *Hub) StreamVideo() <-chan httpservice.VideoResponse {
 		}
 
 		for msg := range sub {
-			matopt := h.matoptPool.Get().(opencvservice.MatOption)
+			matopt := h.matoptPool.Get().(*opencvservice.MatOption)
 
 			data, err := matopt.MatCompress(msg.Body, opencvservice.JPEGCompress)
 			if err != nil {
