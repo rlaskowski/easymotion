@@ -13,6 +13,9 @@ type Options struct {
 
 	// ID of this service
 	ServiceID string `json:"-"`
+
+	// Port where http server is listening
+	HTTPServerPort int `json:"httpserver_port"`
 }
 
 type CameraOptions struct {
@@ -29,5 +32,6 @@ var DefaultOptions = Options{
 		Autorec:  false,
 		Timeline: true,
 	},
-	ServiceID: "service.easymotion",
+	ServiceID:      "service.easymotion",
+	HTTPServerPort: 9090,
 }
