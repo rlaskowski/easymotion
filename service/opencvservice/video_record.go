@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path"
 	"path/filepath"
 	"time"
 
@@ -18,7 +17,7 @@ type VideoRecord struct {
 }
 
 func OpenVideoRecord(mat gocv.Mat) (*VideoRecord, error) {
-	path := path.Join(config.WorkingDirectory(), "videos")
+	path := config.RecordsPath()
 
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		if err := os.MkdirAll(path, 0777); err != nil {

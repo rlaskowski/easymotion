@@ -8,6 +8,9 @@ type Options struct {
 	// RabbitMQ service address
 	MQAddress string `json:"mq_address"`
 
+	// Grpc service address
+	GrpcAddress string `json:"grpc_address"`
+
 	// Options for each camera
 	CameraOption CameraOptions `json:"camera_options"`
 

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"path"
 	"path/filepath"
 	"runtime"
 )
@@ -82,6 +83,17 @@ func hubURL() string {
 	}
 
 	return hubu
+}
+
+func RecordsPath() string {
+	path := path.Join(WorkingDirectory(), "videos")
+
+	env, ok := os.LookupEnv("EASYMOTION_RECORDS_PATH")
+	if ok {
+		path = env
+	}
+
+	return path
 }
 
 func envPath(env, filename string) string {

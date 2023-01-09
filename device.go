@@ -8,18 +8,15 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/rlaskowski/easymotion/config"
 	"github.com/rlaskowski/easymotion/service/opencvservice"
-	"github.com/rlaskowski/easymotion/service/queueservice"
-	"github.com/rlaskowski/easymotion/service/storage"
 	"github.com/rlaskowski/manage"
-	"github.com/rlaskowski/manage/rabbitmq"
 )
 
 type Device struct {
-	opencv    *opencvservice.OpenCVService
-	mqservice *queueservice.RabbitMQService
-	ctx       context.Context
-	cancel    context.CancelFunc
+	opencv *opencvservice.OpenCVService
+	ctx    context.Context
+	cancel context.CancelFunc
 }
 
 func NewRunner() Runner {
@@ -37,8 +34,6 @@ func newDevice() *Device {
 
 func (d *Device) RegisterServices() error {
 	manage.RegisterService(&opencvservice.OpenCVService{})
-	manage.RegisterService(&queueservice.RabbitMQService{})
-	manage.RegisterService(&storage.SqliteService{})
 
 	return nil
 }
@@ -50,29 +45,34 @@ func (d *Device) Run() error {
 		return err
 	}
 
+	var rec *opencvservice.VideoRecord
 	c := d.opencv.Camera()
 
 	go func() {
+		defer rec.Close()
+
 		for {
-			b, err := MatToBytes(c)
+			mat, err := c.ReadMat()
 			if err != nil {
-				log.Printf("reading mat to bytes error: %s", err.Error())
-				break
+				log.Printf("read mat error: %s", err.Error())
+				continue
 			}
 
-			if len(b) > 0 {
-				msg := rabbitmq.Message{
-					ContentType: "application/octet-stream",
-					Body:        b,
+			if rec == nil || rec.Size() >= config.ToBytes(10) {
+				rec, err = opencvservice.OpenVideoRecord(*mat)
+				if err != nil {
+					log.Fatal(err)
+					break
 				}
-
-				if err := d.mqservice.Publish(context.Background(), msg); err != nil {
-					log.Printf("rabbitmq publishing error: %s", err.Error())
-				}
+				continue
 			}
+
+			if err := rec.Write(*mat); err != nil {
+				continue
+			}
+
 			select {
 			case <-d.ctx.Done():
-				log.Printf("running device error: %s", d.ctx.Err().Error())
 				return
 			default:
 			}
@@ -89,18 +89,6 @@ func (d *Device) Close() error {
 
 // Initializing services
 func (d *Device) services() error {
-	mqservice, err := manage.GetService("service.rabbitmq")
-	if err != nil {
-		return fmt.Errorf("service.rabbitmq instance error: %s", err.Error())
-	}
-
-	mqinstance := mqservice.Intstance
-
-	mq, ok := mqinstance.(*queueservice.RabbitMQService)
-	if !ok {
-		return errors.New("rabbitmq service assertion problem")
-	}
-
 	opencv, err := manage.GetService("service.opencv")
 	if err != nil {
 		return fmt.Errorf("service.opencv instance error: %s", err.Error())
@@ -113,7 +101,6 @@ func (d *Device) services() error {
 		return errors.New("opencv service assertion problem")
 	}
 
-	d.mqservice = mq
 	d.opencv = ocv
 
 	return nil

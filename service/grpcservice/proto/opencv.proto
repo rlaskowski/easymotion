@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package opencv;
+option go_package = "service/grpcservice/proto/opencv";
+
+service Video {
+    rpc stream(VideoRequest)  returns (stream VideoResponse);
+}
+
+message VideoRequest {
+    string id = 1;
+}
+
+message VideoResponse {
+    bytes data  = 1;
+}
