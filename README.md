@@ -32,5 +32,3 @@ $ easymotion stop
 # Restart service 
 $ easymotion restart
 ```
-
-
